@@ -108,7 +108,7 @@ def analyze_job_description(
                 json_schema=JDAnalysisRecord.model_json_schema(),
             )
             return JDAnalysisRecord.model_validate(payload)
-        except (ValidationError, ValueError, KeyError, RuntimeError, json.JSONDecodeError):
+        except Exception:
             pass
 
     return heuristic_jd_analysis(job_description)
@@ -151,7 +151,7 @@ def summarize_role_research(
                     update={"sources": merge_sources(parsed.sources, extracted_sources)}
                 )
             return parsed
-        except (ValidationError, ValueError, KeyError, RuntimeError, json.JSONDecodeError):
+        except Exception:
             pass
 
     return heuristic_research_summary(job_description, analysis=analysis)
