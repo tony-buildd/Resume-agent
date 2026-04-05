@@ -9,6 +9,7 @@ export type StageKey =
   | "vault_role_interview"
   | "vault_story_checkpoint"
   | "jd_intake"
+  | "jd_analysis_review"
   | "career_intake"
   | "blueprint_review"
   | "draft_review"

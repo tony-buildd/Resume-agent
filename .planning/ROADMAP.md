@@ -12,7 +12,7 @@ This roadmap builds Resume Agent from project skeleton to a production-ready MVP
 
 - [ ] **Phase 1: Foundations** - Set up the repo, runtime split, auth, data plumbing, orchestration shell, and trace/event model.
 - [x] **Phase 2: Career Vault** - Build the persistent memory layer for roles, stories, facts, provenance, and reusable bullet candidates.
-- [ ] **Phase 3: Resume Session Flow** - Implement JD analysis, research, interrogation, blueprint approval, drafting, and evaluator-driven revision loops.
+- [x] **Phase 3: Resume Session Flow** - Implement JD analysis, research, interrogation, blueprint approval, drafting, and evaluator-driven revision loops.
 - [ ] **Phase 4: Frontend Experience** - Build the chat-first workspace with contextual panels, inline approvals, diffs, and trace views.
 - [ ] **Phase 5: Ship / Polish** - Harden operations, documentation, onboarding, and release packaging for a usable MVP.
 
@@ -59,10 +59,10 @@ Plans:
 **Plans**: 4 plans
 
 Plans:
-- [ ] 03-01: Implement JD analysis and research stages with citation-aware outputs.
-- [ ] 03-02: Implement interrogation, approval gates, and canonical artifact editing behavior.
-- [ ] 03-03: Implement narrative blueprinting, drafting, and final package assembly.
-- [ ] 03-04: Implement evaluator scoring and targeted revision reruns.
+- [x] 03-01: Implement JD analysis and research stages with citation-aware outputs.
+- [x] 03-02: Implement interrogation, approval gates, and canonical artifact editing behavior.
+- [x] 03-03: Implement narrative blueprinting, drafting, and final package assembly.
+- [x] 03-04: Implement evaluator scoring and targeted revision reruns.
 
 ### Phase 4: Frontend Experience
 **Goal**: Make the orchestration legible and usable through a chat-first workspace with contextual artifacts and revision review UI.
@@ -75,7 +75,7 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 04-01: Build the chat-centered shell and contextual panel system.
+- [x] 04-01: Build the chat-centered shell and contextual panel system.
 - [ ] 04-02: Build inline approval, editing, and artifact diff interactions.
 - [ ] 04-03: Build trace summary and expanded debug/detail views with strong usability and accessibility.
 
@@ -102,6 +102,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 |-------|----------------|--------|-----------|
 | 1. Foundations | 3/3 | Complete | 2026-04-05 |
 | 2. Career Vault | 3/3 | Complete | 2026-04-06 |
-| 3. Resume Session Flow | 0/4 | Not started | - |
-| 4. Frontend Experience | 0/3 | Not started | - |
+| 3. Resume Session Flow | 4/4 | Complete | 2026-04-05 |
+| 4. Frontend Experience | 1/3 | In progress | - |
 | 5. Ship / Polish | 0/2 | Not started | - |

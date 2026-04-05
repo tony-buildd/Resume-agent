@@ -34,6 +34,7 @@ class InterruptReason(str, Enum):
     AWAITING_JD_ANALYSIS_APPROVAL = "awaiting_jd_analysis_approval"
     AWAITING_EXPERIENCE_DETAILS = "awaiting_experience_details"
     AWAITING_BLUEPRINT_APPROVAL = "awaiting_blueprint_approval"
+    AWAITING_DRAFT_REVIEW = "awaiting_draft_review"
     NONE = "none"
 
 
@@ -121,11 +122,112 @@ class ResearchSummaryRecord(BaseModel):
     sources: list[ResearchSourceRecord]
 
 
+class InterrogationPromptRecord(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    prompt: str
+    why_it_matters: str = Field(alias="whyItMatters")
+    response_key: str = Field(alias="responseKey")
+    target_requirement: str = Field(alias="targetRequirement")
+    evidence_gap: str = Field(alias="evidenceGap")
+    supporting_signals: list[str] = Field(alias="supportingSignals")
+
+
+class BlueprintBulletRecord(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    bullet_id: str = Field(alias="bulletId")
+    text: str
+    source_story_id: str | None = Field(default=None, alias="sourceStoryId")
+    source_story_name: str | None = Field(default=None, alias="sourceStoryName")
+    rationale: str
+
+
+class BlueprintRoleRecord(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    role_id: str = Field(alias="roleId")
+    company_name: str = Field(alias="companyName")
+    role_title: str = Field(alias="roleTitle")
+    why_selected: str = Field(alias="whySelected")
+    selected_bullets: list[BlueprintBulletRecord] = Field(alias="selectedBullets")
+    selected_story_names: list[str] = Field(default_factory=list, alias="selectedStoryNames")
+
+
+class BlueprintSectionRecord(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    key: str
+    label: str
+    included: bool
+    max_items: int = Field(alias="maxItems")
+
+
+class NarrativeBlueprintRecord(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    narrative_angle: str = Field(alias="narrativeAngle")
+    headline_focus: str = Field(alias="headlineFocus")
+    keyword_priorities: list[str] = Field(alias="keywordPriorities")
+    skills_focus: list[str] = Field(alias="skillsFocus")
+    selected_roles: list[BlueprintRoleRecord] = Field(alias="selectedRoles")
+    sections: list[BlueprintSectionRecord]
+    omitted_signals: list[str] = Field(alias="omittedSignals")
+    one_page_strategy: str = Field(alias="onePageStrategy")
+
+
+class InterviewTalkingPointRecord(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    title: str
+    prompt: str
+
+
+class ConcernHandlingNoteRecord(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    concern: str
+    mitigation: str
+
+
+class ResumePackageRecord(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    markdown_resume: str = Field(alias="markdownResume")
+    talking_points: list[InterviewTalkingPointRecord] = Field(alias="talkingPoints")
+    concern_handling_notes: list[ConcernHandlingNoteRecord] = Field(
+        alias="concernHandlingNotes"
+    )
+
+
+class EvaluationDimensionRecord(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    score: int = Field(ge=1, le=5)
+    rationale: str
+    evidence: list[str]
+
+
+class EvaluationScorecardRecord(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    fit: EvaluationDimensionRecord
+    evidence_support: EvaluationDimensionRecord = Field(alias="evidenceSupport")
+    specificity: EvaluationDimensionRecord
+    overstatement_risk: EvaluationDimensionRecord = Field(alias="overstatementRisk")
+    overall_score: int = Field(alias="overallScore", ge=1, le=5)
+    needs_revision: bool = Field(alias="needsRevision")
+    revision_target_stage: StageKey = Field(alias="revisionTargetStage")
+    revision_summary: str = Field(alias="revisionSummary")
+
+
 class AdvanceSessionRequest(BaseModel):
     answer: str | None = None
     approve_jd_analysis: bool = Field(default=False, alias="approveJdAnalysis")
     approve_blueprint: bool = Field(default=False, alias="approveBlueprint")
     approve_checkpoint: bool = Field(default=False, alias="approveCheckpoint")
+    accept_draft_review: bool = Field(default=False, alias="acceptDraftReview")
+    request_revision: bool = Field(default=False, alias="requestRevision")
 
 
 class AdvanceSessionResponse(BaseModel):

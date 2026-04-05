@@ -5,6 +5,7 @@ out/
 dist/
 coverage/
 build/
+.data/
 .venv/
 __pycache__/
 .pytest_cache/

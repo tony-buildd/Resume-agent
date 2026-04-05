@@ -13,9 +13,15 @@ from app.db.models import (
     SessionStatus,
     TraceEventRecord,
 )
+from pydantic import BaseModel
+
+from app.orchestration.blueprint import build_narrative_blueprint
 from app.orchestration.contracts import (
     AdvanceSessionResponse,
+    EvaluationScorecardRecord,
+    InterrogationPromptRecord,
     JDAnalysisRecord,
+    NarrativeBlueprintRecord,
     InterruptReason,
     ResearchSummaryRecord,
     RuntimeArtifact,
@@ -24,6 +30,12 @@ from app.orchestration.contracts import (
     SessionEnvelope,
     StageKey,
     StageStatus,
+)
+from app.orchestration.drafting import build_resume_package
+from app.orchestration.evaluation import evaluate_resume_package
+from app.orchestration.interrogation import (
+    build_canonical_session_context,
+    build_interrogation_prompt,
 )
 from app.orchestration.research import generate_jd_analysis_bundle
 from app.vault.contracts import GuidedRoleCaptureRequest, StoryCheckpointRecord
@@ -57,10 +69,13 @@ def ensure_runtime_state(record: SessionRecord) -> dict[str, Any]:
     runtime.setdefault("interrupt_reason", InterruptReason.NONE.value)
     runtime.setdefault("stage_history", [runtime["current_stage"]])
     runtime.setdefault("answers", {})
+    runtime.setdefault("canonical_session_context", {})
     runtime.setdefault("transitions", [])
     runtime.setdefault("jd_analysis_artifact_id", None)
     runtime.setdefault("research_summary_artifact_id", None)
     runtime.setdefault("blueprint_artifact_id", None)
+    runtime.setdefault("draft_package_artifact_id", None)
+    runtime.setdefault("evaluation_artifact_id", None)
     runtime.setdefault("flow", "resume_session")
     runtime.setdefault("updated_at", utc_now().isoformat())
     snapshot["runtime"] = runtime
@@ -266,8 +281,28 @@ def mark_vault_checkpoint_approved(record: SessionRecord, runtime: dict[str, Any
     return
 
 
-def serialize_model_payload(model: JDAnalysisRecord | ResearchSummaryRecord) -> dict[str, Any]:
+def serialize_model_payload(model: BaseModel) -> dict[str, Any]:
     return model.model_dump(by_alias=True, mode="json")
+
+
+def parse_jd_analysis(runtime: dict[str, Any]) -> JDAnalysisRecord:
+    payload = runtime.get("job_constraint_profile") or {}
+    return JDAnalysisRecord.model_validate(payload)
+
+
+def parse_research_summary(runtime: dict[str, Any]) -> ResearchSummaryRecord:
+    payload = runtime.get("research_summary") or {}
+    return ResearchSummaryRecord.model_validate(payload)
+
+
+def parse_narrative_blueprint(runtime: dict[str, Any]) -> NarrativeBlueprintRecord:
+    payload = runtime.get("narrative_blueprint") or {}
+    return NarrativeBlueprintRecord.model_validate(payload)
+
+
+def parse_evaluation_scorecard(runtime: dict[str, Any]) -> EvaluationScorecardRecord:
+    payload = runtime.get("evaluation_scorecard") or {}
+    return EvaluationScorecardRecord.model_validate(payload)
 
 
 def build_vault_guided_request(runtime: dict[str, Any]) -> GuidedRoleCaptureRequest:
@@ -496,6 +531,8 @@ def advance_session(
     approve_jd_analysis: bool = False,
     approve_blueprint: bool = False,
     approve_checkpoint: bool = False,
+    accept_draft_review: bool = False,
+    request_revision: bool = False,
 ) -> AdvanceSessionResponse:
     runtime = ensure_runtime_state(record)
     latest_answer = answer.strip() if answer else None
@@ -640,17 +677,29 @@ def advance_session(
             continue
 
         if stage is StageKey.CAREER_INTAKE:
+            jd_analysis = parse_jd_analysis(runtime)
+            research_summary = parse_research_summary(runtime)
+            interrogation_prompt = build_interrogation_prompt(
+                db,
+                user=record.user,
+                analysis=jd_analysis,
+                research=research_summary,
+            )
             upsert_stage_artifact(
                 db,
                 record,
                 stage=stage,
-                kind="question",
+                kind="interrogation-question",
                 status=ArtifactStatus.CANONICAL,
-                title="Provide raw experience details",
-                summary="The orchestrator is waiting for the user's raw experience context before blueprinting.",
+                title=f"Fill the gap for {interrogation_prompt.target_requirement}",
+                summary=interrogation_prompt.why_it_matters,
                 payload={
-                    "prompt": "Share the raw accomplishments, projects, stack, and scope for the most relevant experience.",
-                    "responseKey": "experienceDetails",
+                    "prompt": interrogation_prompt.prompt,
+                    "responseKey": interrogation_prompt.response_key,
+                    "targetRequirement": interrogation_prompt.target_requirement,
+                    "whyItMatters": interrogation_prompt.why_it_matters,
+                    "supportingSignals": interrogation_prompt.supporting_signals,
+                    "evidenceGap": interrogation_prompt.evidence_gap,
                 },
             )
             if not latest_answer:
@@ -664,12 +713,31 @@ def advance_session(
                 )
                 break
 
-            runtime["answers"]["experienceDetails"] = latest_answer
+            runtime["answers"][interrogation_prompt.response_key] = latest_answer
+            runtime["canonical_session_context"] = build_canonical_session_context(
+                runtime,
+                prompt=interrogation_prompt,
+                answer=latest_answer,
+            )
+            upsert_stage_artifact(
+                db,
+                record,
+                stage=stage,
+                kind="session-context",
+                status=ArtifactStatus.CANONICAL,
+                title="Canonical session context",
+                summary="Approved JD context and user-provided gap answers that downstream stages should treat as canonical session state.",
+                payload={
+                    "canonicalContext": runtime["canonical_session_context"],
+                },
+            )
             append_trace(
                 db,
                 record,
                 stage=stage,
-                message="Captured experience details and prepared a blueprint review artifact.",
+                message=(
+                    "Captured the highest-impact interrogation answer and persisted it as canonical session context."
+                ),
             )
             latest_answer = None
             transition_to(
@@ -682,17 +750,26 @@ def advance_session(
             continue
 
         if stage is StageKey.BLUEPRINT_REVIEW:
+            jd_analysis = parse_jd_analysis(runtime)
+            research_summary = parse_research_summary(runtime)
+            blueprint_record = build_narrative_blueprint(
+                db,
+                user=record.user,
+                analysis=jd_analysis,
+                research=research_summary,
+                canonical_context=runtime["canonical_session_context"],
+            )
+            runtime["narrative_blueprint"] = serialize_model_payload(blueprint_record)
             blueprint = upsert_stage_artifact(
                 db,
                 record,
                 stage=stage,
                 kind="blueprint",
                 status=ArtifactStatus.CANDIDATE,
-                title="Phase-one narrative blueprint",
-                summary="A skeletal blueprint built from the captured JD and experience data, ready for approval.",
+                title="Phase-three narrative blueprint",
+                summary="A one-page narrative blueprint built from approved JD context and draft-safe vault evidence.",
                 payload={
-                    "sections": ["header", "skills", "experience", "projects"],
-                    "story": "Match the strongest available experience to the role before drafting.",
+                    "blueprint": runtime["narrative_blueprint"],
                     "approvalState": "pending",
                 },
             )
@@ -726,19 +803,73 @@ def advance_session(
             continue
 
         if stage is StageKey.DRAFT_REVIEW:
-            upsert_stage_artifact(
+            blueprint = parse_narrative_blueprint(runtime)
+            package_record = build_resume_package(
+                blueprint=blueprint,
+                analysis=parse_jd_analysis(runtime),
+                research=parse_research_summary(runtime),
+                email_address=record.user.email_address,
+            )
+            runtime["draft_package"] = serialize_model_payload(package_record)
+            draft_package = upsert_stage_artifact(
                 db,
                 record,
                 stage=stage,
-                kind="resume-draft",
+                kind="draft-package",
                 status=ArtifactStatus.CANDIDATE,
-                title="Phase-one draft placeholder",
-                summary="The foundation runtime can now persist a resumable draft artifact for later phases to replace.",
-                payload={
-                    "format": "markdown",
-                    "status": "placeholder",
-                },
+                title="Tailored resume draft package",
+                summary="Markdown resume plus interview talking points and concern-handling notes generated from the approved blueprint.",
+                payload=runtime["draft_package"],
             )
+            runtime["draft_package_artifact_id"] = draft_package.id
+            scorecard_record = evaluate_resume_package(
+                blueprint=blueprint,
+                package=package_record,
+                analysis=parse_jd_analysis(runtime),
+            )
+            runtime["evaluation_scorecard"] = serialize_model_payload(scorecard_record)
+            scorecard_artifact = upsert_stage_artifact(
+                db,
+                record,
+                stage=stage,
+                kind="evaluation-scorecard",
+                status=ArtifactStatus.CANDIDATE,
+                title="Draft evaluation scorecard",
+                summary="Fit, evidence support, specificity, and overstatement risk for the current draft package.",
+                payload=runtime["evaluation_scorecard"],
+            )
+            runtime["evaluation_artifact_id"] = scorecard_artifact.id
+            if request_revision:
+                rerun_target = parse_evaluation_scorecard(runtime).revision_target_stage
+                if rerun_target is StageKey.DRAFT_REVIEW:
+                    rerun_target = StageKey.BLUEPRINT_REVIEW
+                append_trace(
+                    db,
+                    record,
+                    stage=stage,
+                    message="Draft review requested a targeted rerun from the earliest affected stage.",
+                    payload={"rerunTarget": rerun_target.value},
+                )
+                transition_to(
+                    record,
+                    runtime,
+                    rerun_target,
+                    status=StageStatus.RUNNING,
+                )
+                transition_message = f"draft_review_to_{rerun_target.value}"
+                continue
+
+            if not accept_draft_review:
+                transition_message = interrupt_session(
+                    db,
+                    record,
+                    runtime,
+                    stage=stage,
+                    reason=InterruptReason.AWAITING_DRAFT_REVIEW,
+                    message="Paused for draft review acceptance or targeted revision.",
+                )
+                break
+
             transition_to(
                 record,
                 runtime,
@@ -793,7 +924,7 @@ def build_stage(record: SessionRecord) -> RuntimeStage:
         StageKey.JD_ANALYSIS_REVIEW: "Structured JD analysis and cited research are ready for approval.",
         StageKey.CAREER_INTAKE: "Waiting for or processing raw user experience context.",
         StageKey.BLUEPRINT_REVIEW: "Preparing or awaiting approval of the narrative blueprint.",
-        StageKey.DRAFT_REVIEW: "Draft artifact is ready for review or completion.",
+        StageKey.DRAFT_REVIEW: "Draft package and evaluation scorecard are ready for acceptance or targeted revision.",
         StageKey.COMPLETE: "The phase-one orchestration shell reached completion.",
     }
     return RuntimeStage(
