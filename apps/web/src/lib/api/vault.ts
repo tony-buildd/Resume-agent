@@ -90,6 +90,20 @@ export interface VaultIngestionResponse {
   checkpoint: StoryCheckpointRecord;
 }
 
+export interface VaultSemanticMatchRecord {
+  id: string;
+  document: string;
+  metadata: Record<string, unknown>;
+  distance: number | null;
+}
+
+export interface VaultRetrievalResponse {
+  query: string | null;
+  draftSafeRoles: VaultRoleRecord[];
+  questioningSafeRoles: VaultRoleRecord[];
+  semanticMatches: VaultSemanticMatchRecord[];
+}
+
 const DEFAULT_API_BASE_URL = "http://127.0.0.1:8000";
 
 
@@ -159,6 +173,22 @@ export async function createVaultInterviewSession(input?: {
       roleSummary: input?.roleSummary ?? "Focused on automation systems",
       stackSummary: input?.stackSummary ?? "Python, LLM, internal APIs",
       impactSummary: input?.impactSummary ?? "Pending validation",
+    }),
+  });
+}
+
+
+export async function retrieveVaultContext(input?: {
+  query?: string;
+  limit?: number;
+  includeSemantic?: boolean;
+}): Promise<VaultRetrievalResponse> {
+  return apiFetch<VaultRetrievalResponse>("/api/vault/retrieval", {
+    method: "POST",
+    body: JSON.stringify({
+      query: input?.query ?? null,
+      limit: input?.limit ?? 5,
+      includeSemantic: input?.includeSemantic ?? true,
     }),
   });
 }
