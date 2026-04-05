@@ -1,0 +1,853 @@
+from __future__ import annotations
+
+from datetime import UTC, datetime
+from typing import Any
+
+from sqlalchemy.orm import Session
+
+from app.db.models import (
+    ArtifactRecord,
+    ArtifactStatus,
+    EventLevel,
+    SessionRecord,
+    SessionStatus,
+    TraceEventRecord,
+)
+from app.orchestration.contracts import (
+    AdvanceSessionResponse,
+    JDAnalysisRecord,
+    InterruptReason,
+    ResearchSummaryRecord,
+    RuntimeArtifact,
+    RuntimeStage,
+    RuntimeTraceEvent,
+    SessionEnvelope,
+    StageKey,
+    StageStatus,
+)
+from app.orchestration.research import generate_jd_analysis_bundle
+from app.vault.contracts import GuidedRoleCaptureRequest, StoryCheckpointRecord
+from app.vault.ingestion import build_guided_capture_request, extract_statements
+from app.vault.service import create_vault_role_tree, serialize_vault_role
+
+
+STAGE_LABELS: dict[StageKey, str] = {
+    StageKey.BOOTSTRAP: "Bootstrap",
+    StageKey.VAULT_SEED_IMPORT: "Vault Seed Import",
+    StageKey.VAULT_ROLE_INTERVIEW: "Vault Role Interview",
+    StageKey.VAULT_STORY_CHECKPOINT: "Vault Story Checkpoint",
+    StageKey.JD_INTAKE: "Job Description Intake",
+    StageKey.JD_ANALYSIS_REVIEW: "JD Analysis Review",
+    StageKey.CAREER_INTAKE: "Career Intake",
+    StageKey.BLUEPRINT_REVIEW: "Blueprint Review",
+    StageKey.DRAFT_REVIEW: "Draft Review",
+    StageKey.COMPLETE: "Complete",
+}
+
+
+def utc_now() -> datetime:
+    return datetime.now(UTC)
+
+
+def ensure_runtime_state(record: SessionRecord) -> dict[str, Any]:
+    snapshot = dict(record.state_snapshot or {})
+    runtime = dict(snapshot.get("runtime") or {})
+    runtime.setdefault("current_stage", record.stage or StageKey.BOOTSTRAP.value)
+    runtime.setdefault("stage_status", StageStatus.PENDING.value)
+    runtime.setdefault("interrupt_reason", InterruptReason.NONE.value)
+    runtime.setdefault("stage_history", [runtime["current_stage"]])
+    runtime.setdefault("answers", {})
+    runtime.setdefault("transitions", [])
+    runtime.setdefault("jd_analysis_artifact_id", None)
+    runtime.setdefault("research_summary_artifact_id", None)
+    runtime.setdefault("blueprint_artifact_id", None)
+    runtime.setdefault("flow", "resume_session")
+    runtime.setdefault("updated_at", utc_now().isoformat())
+    snapshot["runtime"] = runtime
+    record.state_snapshot = snapshot
+    return runtime
+
+
+def persist_runtime_state(record: SessionRecord, runtime: dict[str, Any]) -> None:
+    snapshot = dict(record.state_snapshot or {})
+    snapshot["runtime"] = runtime
+    record.state_snapshot = snapshot
+
+
+def append_trace(
+    db: Session,
+    record: SessionRecord,
+    *,
+    stage: StageKey,
+    message: str,
+    payload: dict[str, Any] | None = None,
+    level: EventLevel = EventLevel.INFO,
+) -> TraceEventRecord:
+    event = TraceEventRecord(
+        session_id=record.id,
+        stage=stage.value,
+        level=level,
+        message=message,
+        payload=payload or {},
+    )
+    db.add(event)
+    record.trace_events.append(event)
+    return event
+
+
+def find_stage_artifact(
+    record: SessionRecord,
+    *,
+    stage: StageKey,
+    kind: str,
+) -> ArtifactRecord | None:
+    for artifact in record.artifacts:
+        if artifact.kind != kind:
+            continue
+        if artifact.payload.get("stageKey") == stage.value:
+            return artifact
+    return None
+
+
+def upsert_stage_artifact(
+    db: Session,
+    record: SessionRecord,
+    *,
+    stage: StageKey,
+    kind: str,
+    status: ArtifactStatus,
+    title: str,
+    summary: str,
+    payload: dict[str, Any] | None = None,
+) -> ArtifactRecord:
+    artifact = find_stage_artifact(record, stage=stage, kind=kind)
+
+    merged_payload = {
+        "stageKey": stage.value,
+        "stageLabel": STAGE_LABELS[stage],
+    }
+    if payload:
+        merged_payload.update(payload)
+
+    if artifact is None:
+        artifact = ArtifactRecord(
+            session_id=record.id,
+            kind=kind,
+            status=status,
+            payload=merged_payload,
+        )
+        db.add(artifact)
+        record.artifacts.append(artifact)
+    else:
+        artifact.status = status
+        artifact.payload = merged_payload
+
+    artifact.payload["title"] = title
+    artifact.payload["summary"] = summary
+    return artifact
+
+
+def transition_to(
+    record: SessionRecord,
+    runtime: dict[str, Any],
+    stage: StageKey,
+    *,
+    status: StageStatus,
+    interrupt_reason: InterruptReason = InterruptReason.NONE,
+) -> None:
+    record.stage = stage.value
+    runtime["current_stage"] = stage.value
+    runtime["stage_status"] = status.value
+    runtime["interrupt_reason"] = interrupt_reason.value
+    runtime["updated_at"] = utc_now().isoformat()
+
+    if not runtime["stage_history"] or runtime["stage_history"][-1] != stage.value:
+        runtime["stage_history"].append(stage.value)
+
+
+def interrupt_session(
+    db: Session,
+    record: SessionRecord,
+    runtime: dict[str, Any],
+    *,
+    stage: StageKey,
+    reason: InterruptReason,
+    message: str,
+) -> str:
+    transition_to(
+        record,
+        runtime,
+        stage,
+        status=StageStatus.INTERRUPTED,
+        interrupt_reason=reason,
+    )
+    record.status = SessionStatus.INTERRUPTED
+    append_trace(
+        db,
+        record,
+        stage=stage,
+        message=message,
+        payload={"interruptReason": reason.value},
+    )
+    return message
+
+
+def mark_blueprint_approved(record: SessionRecord, runtime: dict[str, Any]) -> None:
+    blueprint_id = runtime.get("blueprint_artifact_id")
+    if not blueprint_id:
+        return
+
+    for artifact in record.artifacts:
+        if artifact.id == blueprint_id:
+            artifact.status = ArtifactStatus.APPROVED
+            artifact.payload = {
+                **artifact.payload,
+                "approvalState": "approved",
+            }
+            return
+
+
+def mark_artifact_approved(record: SessionRecord, artifact_id: str | None) -> None:
+    if not artifact_id:
+        return
+
+    for artifact in record.artifacts:
+        if artifact.id == artifact_id:
+            artifact.status = ArtifactStatus.APPROVED
+            artifact.payload = {
+                **artifact.payload,
+                "approvalState": "approved",
+            }
+            return
+
+
+def mark_stage_artifact_approved(
+    record: SessionRecord,
+    *,
+    stage: StageKey,
+    kind: str,
+) -> None:
+    artifact = find_stage_artifact(record, stage=stage, kind=kind)
+    if artifact is None:
+        return
+
+    artifact.status = ArtifactStatus.APPROVED
+    artifact.payload = {
+        **artifact.payload,
+        "approvalState": "approved",
+    }
+
+
+def mark_jd_analysis_approved(record: SessionRecord, runtime: dict[str, Any]) -> None:
+    mark_stage_artifact_approved(
+        record,
+        stage=StageKey.JD_ANALYSIS_REVIEW,
+        kind="jd-analysis",
+    )
+    mark_stage_artifact_approved(
+        record,
+        stage=StageKey.JD_ANALYSIS_REVIEW,
+        kind="research-summary",
+    )
+
+
+def mark_vault_checkpoint_approved(record: SessionRecord, runtime: dict[str, Any]) -> None:
+    checkpoint_id = runtime.get("vault_checkpoint_artifact_id")
+    if not checkpoint_id:
+        return
+
+    for artifact in record.artifacts:
+        if artifact.id == checkpoint_id:
+            artifact.status = ArtifactStatus.APPROVED
+            artifact.payload = {
+                **artifact.payload,
+                "approvalState": "approved",
+            }
+    return
+
+
+def serialize_model_payload(model: JDAnalysisRecord | ResearchSummaryRecord) -> dict[str, Any]:
+    return model.model_dump(by_alias=True, mode="json")
+
+
+def build_vault_guided_request(runtime: dict[str, Any]) -> GuidedRoleCaptureRequest:
+    return GuidedRoleCaptureRequest(
+        companyName=str(runtime["vault_company_name"]),
+        title=str(runtime["vault_role_title"]),
+        roleSummary=runtime.get("vault_role_summary"),
+        storyName=str(runtime["vault_story_name"]),
+        rawDetails=str(runtime["answers"].get("vaultRoleDetails", "")),
+        stackSummary=runtime.get("vault_stack_summary"),
+        impactSummary=runtime.get("vault_impact_summary"),
+    )
+
+
+def run_vault_ingestion_flow(
+    db: Session,
+    record: SessionRecord,
+    runtime: dict[str, Any],
+    *,
+    latest_answer: str | None,
+    approve_checkpoint: bool,
+) -> tuple[str, str | None]:
+    transition_message = "no-op"
+
+    while True:
+        stage = StageKey(runtime["current_stage"])
+
+        if stage is StageKey.BOOTSTRAP:
+            record.status = SessionStatus.RUNNING
+            append_trace(
+                db,
+                record,
+                stage=StageKey.BOOTSTRAP,
+                message="Vault ingestion session started and advanced to seed import.",
+                payload={"flow": "vault_ingestion"},
+            )
+            transition_to(
+                record,
+                runtime,
+                StageKey.VAULT_SEED_IMPORT,
+                status=StageStatus.RUNNING,
+            )
+            transition_message = "bootstrap_to_vault_seed_import"
+            continue
+
+        if stage is StageKey.VAULT_SEED_IMPORT:
+            upsert_stage_artifact(
+                db,
+                record,
+                stage=stage,
+                kind="vault-question",
+                status=ArtifactStatus.CANONICAL,
+                title="Add seed material or skip",
+                summary="Paste existing resume, portfolio, or profile text for this role, or type 'skip' to go straight to the focused interview.",
+                payload={
+                    "prompt": "Paste seed material for this role, or type 'skip'.",
+                    "responseKey": "vaultSeed",
+                },
+            )
+            if not latest_answer:
+                transition_message = interrupt_session(
+                    db,
+                    record,
+                    runtime,
+                    stage=stage,
+                    reason=InterruptReason.AWAITING_VAULT_SEED,
+                    message="Paused for optional vault seed material.",
+                )
+                break
+
+            runtime["answers"]["vaultSeed"] = latest_answer
+            append_trace(
+                db,
+                record,
+                stage=stage,
+                message="Captured vault seed input and advanced to the focused role interview.",
+            )
+            latest_answer = None
+            transition_to(
+                record,
+                runtime,
+                StageKey.VAULT_ROLE_INTERVIEW,
+                status=StageStatus.RUNNING,
+            )
+            transition_message = "vault_seed_import_to_vault_role_interview"
+            continue
+
+        if stage is StageKey.VAULT_ROLE_INTERVIEW:
+            role_title = runtime.get("vault_role_title", "this role")
+            story_name = runtime.get("vault_story_name", "this story")
+            upsert_stage_artifact(
+                db,
+                record,
+                stage=stage,
+                kind="vault-question",
+                status=ArtifactStatus.CANONICAL,
+                title="Capture one role or project thread",
+                summary=f"Stay within {role_title} and focus only on the {story_name} thread so the vault stores one coherent story at a time.",
+                payload={
+                    "prompt": f"For {role_title}, describe the {story_name} thread only: what you built, the stack, and what changed.",
+                    "responseKey": "vaultRoleDetails",
+                },
+            )
+            if not latest_answer:
+                transition_message = interrupt_session(
+                    db,
+                    record,
+                    runtime,
+                    stage=stage,
+                    reason=InterruptReason.AWAITING_VAULT_ROLE_DETAILS,
+                    message="Paused for focused vault role details.",
+                )
+                break
+
+            runtime["answers"]["vaultRoleDetails"] = latest_answer
+            detail_statements = extract_statements(latest_answer)
+            checkpoint = StoryCheckpointRecord(
+                roleTitle=str(runtime.get("vault_role_title", "Untitled role")),
+                storyName=str(runtime.get("vault_story_name", "Untitled story")),
+                totalFacts=len(detail_statements),
+                draftEligibleFacts=len(detail_statements),
+                pendingReviewFacts=len(detail_statements),
+                suggestedNextQuestion=(
+                    "What concrete scale, metric, or architecture detail is still missing?"
+                    if len(detail_statements) < 3
+                    else "This story is coherent enough for review. Confirm what should stay or be corrected."
+                ),
+                missingSignals=(
+                    ["concrete implementation details"]
+                    if len(detail_statements) < 3
+                    else []
+                ),
+            )
+            checkpoint_artifact = upsert_stage_artifact(
+                db,
+                record,
+                stage=StageKey.VAULT_STORY_CHECKPOINT,
+                kind="vault-checkpoint",
+                status=ArtifactStatus.CANDIDATE,
+                title=f"Review {checkpoint.story_name}",
+                summary="A coherent role/story capture is ready for review before it becomes canonical vault memory.",
+                payload={
+                    "approvalState": "pending",
+                    "rolePreview": {
+                        "companyName": runtime.get("vault_company_name"),
+                        "title": runtime.get("vault_role_title"),
+                        "storyName": runtime.get("vault_story_name"),
+                        "detailPreview": detail_statements[:5],
+                    },
+                    "checkpoint": checkpoint.model_dump(by_alias=True, mode="json"),
+                },
+            )
+            runtime["vault_checkpoint_artifact_id"] = checkpoint_artifact.id
+            append_trace(
+                db,
+                record,
+                stage=stage,
+                message="Captured focused role details and prepared a vault checkpoint review artifact.",
+            )
+            latest_answer = None
+            transition_to(
+                record,
+                runtime,
+                StageKey.VAULT_STORY_CHECKPOINT,
+                status=StageStatus.RUNNING,
+            )
+            transition_message = "vault_role_interview_to_vault_story_checkpoint"
+            continue
+
+        if stage is StageKey.VAULT_STORY_CHECKPOINT:
+            if not approve_checkpoint:
+                transition_message = interrupt_session(
+                    db,
+                    record,
+                    runtime,
+                    stage=stage,
+                    reason=InterruptReason.AWAITING_VAULT_CHECKPOINT_APPROVAL,
+                    message="Paused for vault story checkpoint approval.",
+                )
+                break
+
+            guided_request = build_vault_guided_request(runtime)
+            role_record = create_vault_role_tree(
+                db,
+                user=record.user,
+                payload=build_guided_capture_request(guided_request),
+            )
+            persisted_role = serialize_vault_role(role_record)
+            mark_vault_checkpoint_approved(record, runtime)
+            upsert_stage_artifact(
+                db,
+                record,
+                stage=stage,
+                kind="vault-role-record",
+                status=ArtifactStatus.CANONICAL,
+                title=f"Stored {persisted_role.title}",
+                summary="The reviewed role/story capture is now canonical vault memory.",
+                payload={"role": persisted_role.model_dump(by_alias=True, mode="json")},
+            )
+            append_trace(
+                db,
+                record,
+                stage=stage,
+                message="Vault checkpoint approved and persisted to canonical vault storage.",
+            )
+            transition_to(
+                record,
+                runtime,
+                StageKey.COMPLETE,
+                status=StageStatus.COMPLETE,
+            )
+            record.status = SessionStatus.COMPLETE
+            transition_message = "vault_story_checkpoint_to_complete"
+            break
+
+        break
+
+    return transition_message, latest_answer
+
+
+def advance_session(
+    db: Session,
+    record: SessionRecord,
+    *,
+    answer: str | None = None,
+    approve_jd_analysis: bool = False,
+    approve_blueprint: bool = False,
+    approve_checkpoint: bool = False,
+) -> AdvanceSessionResponse:
+    runtime = ensure_runtime_state(record)
+    latest_answer = answer.strip() if answer else None
+    transition_message = "no-op"
+
+    if runtime["flow"] == "vault_ingestion":
+        transition_message, latest_answer = run_vault_ingestion_flow(
+            db,
+            record,
+            runtime,
+            latest_answer=latest_answer,
+            approve_checkpoint=approve_checkpoint,
+        )
+        persist_runtime_state(record, runtime)
+        db.flush()
+        return AdvanceSessionResponse(
+            transition=transition_message,
+            interrupted=record.status == SessionStatus.INTERRUPTED,
+            envelope=build_session_envelope(record),
+        )
+
+    while True:
+        stage = StageKey(runtime["current_stage"])
+
+        if stage is StageKey.BOOTSTRAP:
+            record.status = SessionStatus.RUNNING
+            append_trace(
+                db,
+                record,
+                stage=StageKey.BOOTSTRAP,
+                message="Session bootstrap started and advanced into the first intake boundary.",
+            )
+            transition_to(
+                record,
+                runtime,
+                StageKey.JD_INTAKE,
+                status=StageStatus.RUNNING,
+            )
+            transition_message = "bootstrap_to_jd_intake"
+            continue
+
+        if stage is StageKey.JD_INTAKE:
+            upsert_stage_artifact(
+                db,
+                record,
+                stage=stage,
+                kind="question",
+                status=ArtifactStatus.CANONICAL,
+                title="Provide the target job description",
+                summary="The orchestrator is waiting for the raw job description before it can analyze the role.",
+                payload={
+                    "prompt": "Paste the job description or company role text.",
+                    "responseKey": "jobDescription",
+                },
+            )
+            if not latest_answer:
+                transition_message = interrupt_session(
+                    db,
+                    record,
+                    runtime,
+                    stage=stage,
+                    reason=InterruptReason.AWAITING_JOB_DESCRIPTION,
+                    message="Paused for the user's job description input.",
+                )
+                break
+
+            runtime["answers"]["jobDescription"] = latest_answer
+            analysis, research = generate_jd_analysis_bundle(latest_answer)
+            runtime["job_constraint_profile"] = serialize_model_payload(analysis)
+            runtime["research_summary"] = serialize_model_payload(research)
+
+            jd_analysis = upsert_stage_artifact(
+                db,
+                record,
+                stage=StageKey.JD_ANALYSIS_REVIEW,
+                kind="jd-analysis",
+                status=ArtifactStatus.CANDIDATE,
+                title="Structured JD analysis",
+                summary="The job description has been parsed into requirements, archetype, and success signals for approval.",
+                payload={
+                    "approvalState": "pending",
+                    "analysis": runtime["job_constraint_profile"],
+                },
+            )
+            research_summary = upsert_stage_artifact(
+                db,
+                record,
+                stage=StageKey.JD_ANALYSIS_REVIEW,
+                kind="research-summary",
+                status=ArtifactStatus.CANDIDATE,
+                title="Role and company strategy summary",
+                summary="Cited research findings and a concise strategy summary for how the resume should shift.",
+                payload={
+                    "approvalState": "pending",
+                    "research": runtime["research_summary"],
+                },
+            )
+            runtime["jd_analysis_artifact_id"] = jd_analysis.id
+            runtime["research_summary_artifact_id"] = research_summary.id
+            append_trace(
+                db,
+                record,
+                stage=stage,
+                message="Captured job description input and prepared JD analysis and research artifacts.",
+            )
+            latest_answer = None
+            transition_to(
+                record,
+                runtime,
+                StageKey.JD_ANALYSIS_REVIEW,
+                status=StageStatus.RUNNING,
+            )
+            transition_message = "jd_intake_to_jd_analysis_review"
+            continue
+
+        if stage is StageKey.JD_ANALYSIS_REVIEW:
+            if not approve_jd_analysis:
+                transition_message = interrupt_session(
+                    db,
+                    record,
+                    runtime,
+                    stage=stage,
+                    reason=InterruptReason.AWAITING_JD_ANALYSIS_APPROVAL,
+                    message="Paused for JD analysis and research approval.",
+                )
+                break
+
+            mark_jd_analysis_approved(record, runtime)
+            append_trace(
+                db,
+                record,
+                stage=stage,
+                message="JD analysis approved and advanced to career intake.",
+            )
+            transition_to(
+                record,
+                runtime,
+                StageKey.CAREER_INTAKE,
+                status=StageStatus.RUNNING,
+            )
+            transition_message = "jd_analysis_review_to_career_intake"
+            continue
+
+        if stage is StageKey.CAREER_INTAKE:
+            upsert_stage_artifact(
+                db,
+                record,
+                stage=stage,
+                kind="question",
+                status=ArtifactStatus.CANONICAL,
+                title="Provide raw experience details",
+                summary="The orchestrator is waiting for the user's raw experience context before blueprinting.",
+                payload={
+                    "prompt": "Share the raw accomplishments, projects, stack, and scope for the most relevant experience.",
+                    "responseKey": "experienceDetails",
+                },
+            )
+            if not latest_answer:
+                transition_message = interrupt_session(
+                    db,
+                    record,
+                    runtime,
+                    stage=stage,
+                    reason=InterruptReason.AWAITING_EXPERIENCE_DETAILS,
+                    message="Paused for the user's raw experience details.",
+                )
+                break
+
+            runtime["answers"]["experienceDetails"] = latest_answer
+            append_trace(
+                db,
+                record,
+                stage=stage,
+                message="Captured experience details and prepared a blueprint review artifact.",
+            )
+            latest_answer = None
+            transition_to(
+                record,
+                runtime,
+                StageKey.BLUEPRINT_REVIEW,
+                status=StageStatus.RUNNING,
+            )
+            transition_message = "career_intake_to_blueprint_review"
+            continue
+
+        if stage is StageKey.BLUEPRINT_REVIEW:
+            blueprint = upsert_stage_artifact(
+                db,
+                record,
+                stage=stage,
+                kind="blueprint",
+                status=ArtifactStatus.CANDIDATE,
+                title="Phase-one narrative blueprint",
+                summary="A skeletal blueprint built from the captured JD and experience data, ready for approval.",
+                payload={
+                    "sections": ["header", "skills", "experience", "projects"],
+                    "story": "Match the strongest available experience to the role before drafting.",
+                    "approvalState": "pending",
+                },
+            )
+            runtime["blueprint_artifact_id"] = blueprint.id
+
+            if not approve_blueprint:
+                transition_message = interrupt_session(
+                    db,
+                    record,
+                    runtime,
+                    stage=stage,
+                    reason=InterruptReason.AWAITING_BLUEPRINT_APPROVAL,
+                    message="Paused for blueprint approval before drafting.",
+                )
+                break
+
+            mark_blueprint_approved(record, runtime)
+            append_trace(
+                db,
+                record,
+                stage=stage,
+                message="Blueprint approved and advanced to the draft review stage.",
+            )
+            transition_to(
+                record,
+                runtime,
+                StageKey.DRAFT_REVIEW,
+                status=StageStatus.RUNNING,
+            )
+            transition_message = "blueprint_review_to_draft_review"
+            continue
+
+        if stage is StageKey.DRAFT_REVIEW:
+            upsert_stage_artifact(
+                db,
+                record,
+                stage=stage,
+                kind="resume-draft",
+                status=ArtifactStatus.CANDIDATE,
+                title="Phase-one draft placeholder",
+                summary="The foundation runtime can now persist a resumable draft artifact for later phases to replace.",
+                payload={
+                    "format": "markdown",
+                    "status": "placeholder",
+                },
+            )
+            transition_to(
+                record,
+                runtime,
+                StageKey.COMPLETE,
+                status=StageStatus.COMPLETE,
+            )
+            record.status = SessionStatus.COMPLETE
+            append_trace(
+                db,
+                record,
+                stage=StageKey.COMPLETE,
+                message="Runtime reached the phase-one completion boundary.",
+            )
+            transition_message = "draft_review_to_complete"
+            break
+
+        if stage is StageKey.COMPLETE:
+            record.status = SessionStatus.COMPLETE
+            transition_message = "already_complete"
+            break
+
+    persist_runtime_state(record, runtime)
+    db.flush()
+    return AdvanceSessionResponse(
+        transition=transition_message,
+        interrupted=record.status == SessionStatus.INTERRUPTED,
+        envelope=build_session_envelope(record),
+    )
+
+
+def build_stage(record: SessionRecord) -> RuntimeStage:
+    runtime = ensure_runtime_state(record)
+    stage_key = StageKey(record.stage or runtime["current_stage"])
+    status_map = {
+        SessionStatus.DRAFT: StageStatus.PENDING,
+        SessionStatus.RUNNING: StageStatus.RUNNING,
+        SessionStatus.INTERRUPTED: StageStatus.INTERRUPTED,
+        SessionStatus.COMPLETE: StageStatus.COMPLETE,
+    }
+    stage_status = status_map[record.status]
+    interrupt_reason = (
+        InterruptReason.NONE
+        if stage_status is StageStatus.COMPLETE
+        else InterruptReason(runtime["interrupt_reason"])
+    )
+    summary_map = {
+        StageKey.BOOTSTRAP: "Preparing the session runtime.",
+        StageKey.VAULT_SEED_IMPORT: "Waiting for optional imported seed material for one role or project thread.",
+        StageKey.VAULT_ROLE_INTERVIEW: "Waiting for focused role/project details to deepen the vault.",
+        StageKey.VAULT_STORY_CHECKPOINT: "A coherent role/story capture is ready for review before persistence.",
+        StageKey.JD_INTAKE: "Waiting for or processing the target job description.",
+        StageKey.JD_ANALYSIS_REVIEW: "Structured JD analysis and cited research are ready for approval.",
+        StageKey.CAREER_INTAKE: "Waiting for or processing raw user experience context.",
+        StageKey.BLUEPRINT_REVIEW: "Preparing or awaiting approval of the narrative blueprint.",
+        StageKey.DRAFT_REVIEW: "Draft artifact is ready for review or completion.",
+        StageKey.COMPLETE: "The phase-one orchestration shell reached completion.",
+    }
+    return RuntimeStage(
+        key=stage_key,
+        label=STAGE_LABELS[stage_key],
+        status=stage_status,
+        summary=summary_map[stage_key],
+        interruptReason=interrupt_reason,
+        canResume=stage_status is not StageStatus.COMPLETE,
+        updatedAt=datetime.fromisoformat(runtime["updated_at"]),
+    )
+
+
+def build_runtime_artifact(artifact: ArtifactRecord) -> RuntimeArtifact:
+    return RuntimeArtifact(
+        id=artifact.id,
+        kind=artifact.kind,
+        status=artifact.status.value,
+        title=str(artifact.payload.get("title", artifact.kind)),
+        summary=str(artifact.payload.get("summary", "")),
+        payload=artifact.payload,
+        createdAt=artifact.created_at,
+        updatedAt=artifact.updated_at,
+    )
+
+
+def build_runtime_event(event: TraceEventRecord) -> RuntimeTraceEvent:
+    return RuntimeTraceEvent(
+        id=event.id,
+        stage=StageKey(event.stage),
+        level=event.level.value,
+        message=event.message,
+        payload=event.payload,
+        createdAt=event.created_at,
+    )
+
+
+def build_session_envelope(record: SessionRecord, clerk_user_id: str | None = None) -> SessionEnvelope:
+    runtime = ensure_runtime_state(record)
+    ordered_artifacts = sorted(record.artifacts, key=lambda item: item.created_at)
+    ordered_events = sorted(record.trace_events, key=lambda item: item.created_at)
+
+    return SessionEnvelope(
+        id=record.id,
+        userId=record.user_id,
+        clerkUserId=clerk_user_id or str(record.user.clerk_user_id),
+        title=record.title,
+        status=record.status.value,
+        stage=build_stage(record),
+        stageHistory=[StageKey(stage) for stage in runtime["stage_history"]],
+        artifactCount=len(ordered_artifacts),
+        traceEventCount=len(ordered_events),
+        artifacts=[build_runtime_artifact(artifact) for artifact in ordered_artifacts],
+        traceEvents=[build_runtime_event(event) for event in ordered_events],
+        createdAt=record.created_at,
+        updatedAt=record.updated_at,
+    )
