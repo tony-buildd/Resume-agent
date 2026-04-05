@@ -45,7 +45,7 @@ Plans:
 
 Plans:
 - [x] 02-01: Design and implement vault schema, provenance states, and bullet candidate storage.
-- [ ] 02-02: Build import + interview-first ingestion flows and story checkpoint review behavior.
+- [x] 02-02: Build import + interview-first ingestion flows and story checkpoint review behavior.
 - [ ] 02-03: Add retrieval rules for approved, inferred, rejected, and dormant vault items.
 
 ### Phase 3: Resume Session Flow
@@ -101,7 +101,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundations | 3/3 | Complete | 2026-04-05 |
-| 2. Career Vault | 1/3 | In progress | - |
+| 2. Career Vault | 2/3 | In progress | - |
 | 3. Resume Session Flow | 0/4 | Not started | - |
 | 4. Frontend Experience | 0/3 | Not started | - |
 | 5. Ship / Polish | 0/2 | Not started | - |
