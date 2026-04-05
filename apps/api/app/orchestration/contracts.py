@@ -8,6 +8,9 @@ from pydantic import BaseModel, ConfigDict, Field
 
 class StageKey(str, Enum):
     BOOTSTRAP = "bootstrap"
+    VAULT_SEED_IMPORT = "vault_seed_import"
+    VAULT_ROLE_INTERVIEW = "vault_role_interview"
+    VAULT_STORY_CHECKPOINT = "vault_story_checkpoint"
     JD_INTAKE = "jd_intake"
     CAREER_INTAKE = "career_intake"
     BLUEPRINT_REVIEW = "blueprint_review"
@@ -23,6 +26,9 @@ class StageStatus(str, Enum):
 
 
 class InterruptReason(str, Enum):
+    AWAITING_VAULT_SEED = "awaiting_vault_seed"
+    AWAITING_VAULT_ROLE_DETAILS = "awaiting_vault_role_details"
+    AWAITING_VAULT_CHECKPOINT_APPROVAL = "awaiting_vault_checkpoint_approval"
     AWAITING_JOB_DESCRIPTION = "awaiting_job_description"
     AWAITING_EXPERIENCE_DETAILS = "awaiting_experience_details"
     AWAITING_BLUEPRINT_APPROVAL = "awaiting_blueprint_approval"
@@ -85,6 +91,7 @@ class CreateSessionRequest(BaseModel):
 class AdvanceSessionRequest(BaseModel):
     answer: str | None = None
     approve_blueprint: bool = Field(default=False, alias="approveBlueprint")
+    approve_checkpoint: bool = Field(default=False, alias="approveCheckpoint")
 
 
 class AdvanceSessionResponse(BaseModel):
