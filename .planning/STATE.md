@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-04-05)
 ## Current Position
 
 Phase: 2 of 5 (Career Vault)
-Plan: discuss
-Status: Ready to discuss next phase
-Last activity: 2026-04-05 — Completed Phase 1 UAT with live Clerk and Neon verification
+Plan: 2 of 3 in current phase
+Status: Ready to execute
+Last activity: 2026-04-05 — Executed plan 02-01 and recorded the phase summary
 
 Progress: [██████████] 100%
 
@@ -28,9 +28,10 @@ Progress: [██████████] 100%
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1 | 3 | 192 min | 64 min |
+| 2 | 1 | 47 min | 47 min |
 
 **Recent Trend:**
-- Last 5 plans: 55 min, 58 min, 79 min
+- Last 5 plans: 55 min, 58 min, 79 min, 47 min
 - Trend: Stable
 
 ## Accumulated Context
@@ -45,6 +46,7 @@ Recent decisions affecting current work:
 - Plan 01-01: Use a repo-level pnpm workspace and standard Python venv bootstrap before deeper backend setup
 - Plan 01-02: Keep auth server-first in the web app and anchor persistence to a single canonical `AppUser` model
 - Plan 01-03: Keep the runtime deterministic in phase 1 while locking the typed session/artifact/trace contract surface
+- Plan 02-01: Separate canonical facts from candidate bullets and link them through explicit supporting-fact relationships
 
 ### Pending Todos
 
@@ -58,5 +60,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-04-05 14:09
-Stopped at: Phase 2 discussion is the next GSD step
+Stopped at: Phase 2 plan `02-02` is ready for execution
 Resume file: None
