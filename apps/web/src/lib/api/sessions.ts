@@ -63,6 +63,21 @@ export interface SessionEnvelope {
   updatedAt: string;
 }
 
+export interface AdvanceSessionResponse {
+  transition: string;
+  interrupted: boolean;
+  envelope: SessionEnvelope;
+}
+
+export interface AdvanceSessionPayload {
+  answer?: string;
+  approveJdAnalysis?: boolean;
+  approveBlueprint?: boolean;
+  approveCheckpoint?: boolean;
+  acceptDraftReview?: boolean;
+  requestRevision?: boolean;
+}
+
 const DEFAULT_API_BASE_URL = "http://127.0.0.1:8000";
 
 
@@ -123,4 +138,15 @@ export async function createSession(title = "Workspace bootstrap"): Promise<Sess
 
 export async function getSession(sessionId: string): Promise<SessionEnvelope> {
   return apiFetch<SessionEnvelope>(`/api/sessions/${sessionId}`);
+}
+
+
+export async function advanceSession(
+  sessionId: string,
+  payload: AdvanceSessionPayload,
+): Promise<AdvanceSessionResponse> {
+  return apiFetch<AdvanceSessionResponse>(`/api/sessions/${sessionId}/advance`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
 }
