@@ -1,8 +1,12 @@
 import Link from "next/link";
 
-import { SignedIn, SignedOut, SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
+import { SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
 
-export default function Home() {
+import { getAuthState } from "@/lib/auth";
+
+export default async function Home() {
+  const { isAuthenticated } = await getAuthState();
+
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#f4f6fb_0%,#eef2ff_48%,#ffffff_100%)] px-6 py-10 text-slate-950">
       <div className="mx-auto flex max-w-6xl flex-col gap-8">
@@ -23,7 +27,7 @@ export default function Home() {
               </p>
             </div>
             <div className="flex items-center gap-3">
-              <SignedOut>
+              {!isAuthenticated ? (
                 <div className="flex flex-wrap gap-3">
                   <SignInButton mode="modal">
                     <button className="rounded-full bg-slate-950 px-4 py-3 text-sm font-medium text-slate-50">
@@ -36,8 +40,8 @@ export default function Home() {
                     </button>
                   </SignUpButton>
                 </div>
-              </SignedOut>
-              <SignedIn>
+              ) : (
+                <>
                 <Link
                   href="/workspace"
                   className="rounded-full bg-slate-950 px-4 py-3 text-sm font-medium text-slate-50"
@@ -47,7 +51,8 @@ export default function Home() {
                 <div className="rounded-full border border-slate-200 bg-white p-2">
                   <UserButton />
                 </div>
-              </SignedIn>
+                </>
+              )}
             </div>
           </div>
         </header>
