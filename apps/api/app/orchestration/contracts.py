@@ -34,6 +34,7 @@ class InterruptReason(str, Enum):
     AWAITING_JD_ANALYSIS_APPROVAL = "awaiting_jd_analysis_approval"
     AWAITING_EXPERIENCE_DETAILS = "awaiting_experience_details"
     AWAITING_BLUEPRINT_APPROVAL = "awaiting_blueprint_approval"
+    AWAITING_DRAFT_REVIEW = "awaiting_draft_review"
     NONE = "none"
 
 
@@ -199,11 +200,34 @@ class ResumePackageRecord(BaseModel):
     )
 
 
+class EvaluationDimensionRecord(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    score: int = Field(ge=1, le=5)
+    rationale: str
+    evidence: list[str]
+
+
+class EvaluationScorecardRecord(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    fit: EvaluationDimensionRecord
+    evidence_support: EvaluationDimensionRecord = Field(alias="evidenceSupport")
+    specificity: EvaluationDimensionRecord
+    overstatement_risk: EvaluationDimensionRecord = Field(alias="overstatementRisk")
+    overall_score: int = Field(alias="overallScore", ge=1, le=5)
+    needs_revision: bool = Field(alias="needsRevision")
+    revision_target_stage: StageKey = Field(alias="revisionTargetStage")
+    revision_summary: str = Field(alias="revisionSummary")
+
+
 class AdvanceSessionRequest(BaseModel):
     answer: str | None = None
     approve_jd_analysis: bool = Field(default=False, alias="approveJdAnalysis")
     approve_blueprint: bool = Field(default=False, alias="approveBlueprint")
     approve_checkpoint: bool = Field(default=False, alias="approveCheckpoint")
+    accept_draft_review: bool = Field(default=False, alias="acceptDraftReview")
+    request_revision: bool = Field(default=False, alias="requestRevision")
 
 
 class AdvanceSessionResponse(BaseModel):
