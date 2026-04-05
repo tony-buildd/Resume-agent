@@ -9,6 +9,9 @@ class Settings(BaseSettings):
     database_url: str = (
         "postgresql+psycopg://postgres:postgres@localhost:5432/resume_agent"
     )
+    openai_api_key: str | None = None
+    openai_model: str = "gpt-5.2"
+    openai_reasoning_effort: str = "medium"
     chroma_enabled: bool = True
     chroma_path: str = ".data/chroma"
     chroma_collection_name: str = "vault_notes"
