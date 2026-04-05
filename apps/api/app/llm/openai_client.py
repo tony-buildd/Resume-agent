@@ -55,7 +55,7 @@ class OpenAIResponsesClient:
             text_format={
                 "type": "json_schema",
                 "name": schema_name,
-                "schema": json_schema,
+                "schema": make_strict_json_schema(json_schema),
                 "strict": True,
             },
         )
@@ -143,3 +143,17 @@ def extract_output_text(response: Any) -> str:
             return "\n".join(text_parts)
 
     raise RuntimeError("OpenAI response did not contain readable text output.")
+
+
+def make_strict_json_schema(schema: dict[str, Any]) -> dict[str, Any]:
+    def transform(node: Any) -> Any:
+        if isinstance(node, dict):
+            transformed = {key: transform(value) for key, value in node.items()}
+            if transformed.get("type") == "object":
+                transformed.setdefault("additionalProperties", False)
+            return transformed
+        if isinstance(node, list):
+            return [transform(item) for item in node]
+        return node
+
+    return transform(schema)
