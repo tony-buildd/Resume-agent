@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from dataclasses import dataclass
 from functools import cached_property
 from typing import Any
 
@@ -11,6 +12,12 @@ from app.config import Settings, get_settings
 
 class OpenAIConfigurationError(RuntimeError):
     """Raised when OpenAI provider settings are incomplete."""
+
+
+@dataclass(frozen=True)
+class OpenAIResponsePayload:
+    text: str
+    payload: dict[str, Any]
 
 
 class OpenAIResponsesClient:
@@ -40,24 +47,19 @@ class OpenAIResponsesClient:
         model: str | None = None,
         tools: list[dict[str, Any]] | None = None,
     ) -> dict[str, Any]:
-        payload: dict[str, Any] = {
-            "model": model or self.settings.openai_model,
-            "input": build_text_input(system_prompt=system_prompt, user_prompt=user_prompt),
-            "reasoning": {"effort": self.settings.openai_reasoning_effort},
-            "text": {
-                "format": {
-                    "type": "json_schema",
-                    "name": schema_name,
-                    "schema": json_schema,
-                    "strict": True,
-                }
+        response = self.create_response(
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            model=model,
+            tools=tools,
+            text_format={
+                "type": "json_schema",
+                "name": schema_name,
+                "schema": json_schema,
+                "strict": True,
             },
-        }
-        if tools:
-            payload["tools"] = tools
-
-        response = self._client.responses.create(**payload)
-        return json.loads(extract_output_text(response))
+        )
+        return json.loads(response.text)
 
     def create_text_response(
         self,
@@ -67,6 +69,23 @@ class OpenAIResponsesClient:
         model: str | None = None,
         tools: list[dict[str, Any]] | None = None,
     ) -> str:
+        return self.create_response(
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            model=model,
+            tools=tools,
+        ).text
+
+    def create_response(
+        self,
+        *,
+        system_prompt: str,
+        user_prompt: str,
+        model: str | None = None,
+        tools: list[dict[str, Any]] | None = None,
+        include: list[str] | None = None,
+        text_format: dict[str, Any] | None = None,
+    ) -> OpenAIResponsePayload:
         payload: dict[str, Any] = {
             "model": model or self.settings.openai_model,
             "input": build_text_input(system_prompt=system_prompt, user_prompt=user_prompt),
@@ -74,9 +93,21 @@ class OpenAIResponsesClient:
         }
         if tools:
             payload["tools"] = tools
+        if include:
+            payload["include"] = include
+        if text_format:
+            payload["text"] = {"format": text_format}
 
         response = self._client.responses.create(**payload)
-        return extract_output_text(response)
+        raw_payload = (
+            response.model_dump(mode="python")
+            if hasattr(response, "model_dump")
+            else {"response": response}
+        )
+        return OpenAIResponsePayload(
+            text=extract_output_text(response),
+            payload=raw_payload,
+        )
 
 
 def build_text_input(*, system_prompt: str, user_prompt: str) -> list[dict[str, Any]]:
