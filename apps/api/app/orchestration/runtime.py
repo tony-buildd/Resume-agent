@@ -221,9 +221,34 @@ def mark_artifact_approved(record: SessionRecord, artifact_id: str | None) -> No
             return
 
 
+def mark_stage_artifact_approved(
+    record: SessionRecord,
+    *,
+    stage: StageKey,
+    kind: str,
+) -> None:
+    artifact = find_stage_artifact(record, stage=stage, kind=kind)
+    if artifact is None:
+        return
+
+    artifact.status = ArtifactStatus.APPROVED
+    artifact.payload = {
+        **artifact.payload,
+        "approvalState": "approved",
+    }
+
+
 def mark_jd_analysis_approved(record: SessionRecord, runtime: dict[str, Any]) -> None:
-    mark_artifact_approved(record, runtime.get("jd_analysis_artifact_id"))
-    mark_artifact_approved(record, runtime.get("research_summary_artifact_id"))
+    mark_stage_artifact_approved(
+        record,
+        stage=StageKey.JD_ANALYSIS_REVIEW,
+        kind="jd-analysis",
+    )
+    mark_stage_artifact_approved(
+        record,
+        stage=StageKey.JD_ANALYSIS_REVIEW,
+        kind="research-summary",
+    )
 
 
 def mark_vault_checkpoint_approved(record: SessionRecord, runtime: dict[str, Any]) -> None:
