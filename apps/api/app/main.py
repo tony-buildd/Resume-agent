@@ -4,6 +4,7 @@ from fastapi import FastAPI
 
 from app.api.routes.health import router as health_router
 from app.api.routes.sessions import router as session_router
+from app.api.routes.vault import router as vault_router
 from app.config import get_settings
 from app.db.session import initialize_database
 
@@ -26,6 +27,7 @@ app = FastAPI(
 
 app.include_router(health_router)
 app.include_router(session_router)
+app.include_router(vault_router)
 
 
 @app.get("/")

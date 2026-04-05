@@ -51,17 +51,15 @@ def create_vault_role_tree(
 
     for fact_input in payload.role_facts:
         fact = build_fact(role=role, project_story=None, payload=fact_input)
-        role.facts.append(fact)
         fact_lookup[fact_input.client_key] = fact
 
     for bullet_input in payload.role_bullet_candidates:
-        bullet = build_bullet(
+        build_bullet(
             role=role,
             project_story=None,
             payload=bullet_input,
             fact_lookup=fact_lookup,
         )
-        role.bullet_candidates.append(bullet)
 
     for story_input in payload.project_stories:
         story = VaultProjectStory(
@@ -78,17 +76,15 @@ def create_vault_role_tree(
 
         for fact_input in story_input.facts:
             fact = build_fact(role=role, project_story=story, payload=fact_input)
-            story.facts.append(fact)
             fact_lookup[fact_input.client_key] = fact
 
         for bullet_input in story_input.bullet_candidates:
-            bullet = build_bullet(
+            build_bullet(
                 role=role,
                 project_story=story,
                 payload=bullet_input,
                 fact_lookup=fact_lookup,
             )
-            story.bullet_candidates.append(bullet)
 
     db.add(company)
     db.flush()
@@ -117,6 +113,12 @@ def base_vault_role_query() -> Select[VaultRole]:
 
 
 def serialize_vault_role(record: VaultRole) -> VaultRoleRecord:
+    role_level_facts = [
+        item for item in record.facts if item.project_story_id is None
+    ]
+    role_level_bullets = [
+        item for item in record.bullet_candidates if item.project_story_id is None
+    ]
     return VaultRoleRecord(
         id=record.id,
         title=record.title,
@@ -127,8 +129,8 @@ def serialize_vault_role(record: VaultRole) -> VaultRoleRecord:
         summary=record.summary,
         details=record.details,
         company=serialize_company(record.company),
-        roleFacts=[serialize_fact(item) for item in record.facts],
-        roleBulletCandidates=[serialize_bullet(item) for item in record.bullet_candidates],
+        roleFacts=[serialize_fact(item) for item in role_level_facts],
+        roleBulletCandidates=[serialize_bullet(item) for item in role_level_bullets],
         projectStories=[serialize_story(item) for item in record.project_stories],
         createdAt=record.created_at,
         updatedAt=record.updated_at,
