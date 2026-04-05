@@ -30,8 +30,8 @@ This roadmap builds Resume Agent from project skeleton to a production-ready MVP
 
 Plans:
 - [x] 01-01: Scaffold the workspace, package structure, local tooling, and shared environment conventions.
-- [ ] 01-02: Wire Clerk, Postgres, and backend persistence for users, sessions, artifacts, and trace events.
-- [ ] 01-03: Create the orchestration shell, typed contracts, and skill audit/project workflow docs.
+- [x] 01-02: Wire Clerk, Postgres, and backend persistence for users, sessions, artifacts, and trace events.
+- [x] 01-03: Create the orchestration shell, typed contracts, and skill audit/project workflow docs.
 
 ### Phase 2: Career Vault
 **Goal**: Build the structured career memory system that can grow over time and feed multiple resume narratives from the same experience.
@@ -100,8 +100,8 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundations | 1/3 | In progress | - |
-| 2. Career Vault | 0/3 | Not started | - |
+| 1. Foundations | 3/3 | Complete | 2026-04-05 |
+| 2. Career Vault | 0/3 | Ready for planning | - |
 | 3. Resume Session Flow | 0/4 | Not started | - |
 | 4. Frontend Experience | 0/3 | Not started | - |
 | 5. Ship / Polish | 0/2 | Not started | - |
