@@ -11,7 +11,7 @@ This roadmap builds Resume Agent from project skeleton to a production-ready MVP
 - Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
 
 - [ ] **Phase 1: Foundations** - Set up the repo, runtime split, auth, data plumbing, orchestration shell, and trace/event model.
-- [ ] **Phase 2: Career Vault** - Build the persistent memory layer for roles, stories, facts, provenance, and reusable bullet candidates.
+- [x] **Phase 2: Career Vault** - Build the persistent memory layer for roles, stories, facts, provenance, and reusable bullet candidates.
 - [ ] **Phase 3: Resume Session Flow** - Implement JD analysis, research, interrogation, blueprint approval, drafting, and evaluator-driven revision loops.
 - [ ] **Phase 4: Frontend Experience** - Build the chat-first workspace with contextual panels, inline approvals, diffs, and trace views.
 - [ ] **Phase 5: Ship / Polish** - Harden operations, documentation, onboarding, and release packaging for a usable MVP.
@@ -46,7 +46,7 @@ Plans:
 Plans:
 - [x] 02-01: Design and implement vault schema, provenance states, and bullet candidate storage.
 - [x] 02-02: Build import + interview-first ingestion flows and story checkpoint review behavior.
-- [ ] 02-03: Add retrieval rules for approved, inferred, rejected, and dormant vault items.
+- [x] 02-03: Add retrieval rules for approved, inferred, rejected, and dormant vault items.
 
 ### Phase 3: Resume Session Flow
 **Goal**: Deliver the core multi-stage tailoring flow from JD intake to final draft package with evaluator-guided revisions.
@@ -101,7 +101,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundations | 3/3 | Complete | 2026-04-05 |
-| 2. Career Vault | 2/3 | In progress | - |
+| 2. Career Vault | 3/3 | Complete | 2026-04-06 |
 | 3. Resume Session Flow | 0/4 | Not started | - |
 | 4. Frontend Experience | 0/3 | Not started | - |
 | 5. Ship / Polish | 0/2 | Not started | - |
