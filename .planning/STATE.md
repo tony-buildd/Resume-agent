@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-04-05)
 
 **Core value:** Turn fragmented career context into a credible, strategically tailored one-page resume that matches a target role without hiding how the system reached its recommendations.
-**Current focus:** Phase 3: Resume Session Flow
+**Current focus:** Phase 4: Frontend Experience
 
 ## Current Position
 
-Phase: 3 of 5 (Resume Session Flow)
-Plan: 4 of 4 in current phase
+Phase: 4 of 5 (Frontend Experience)
+Plan: discussion/planning
 Status: In progress
-Last activity: 2026-04-05 — Completed plan 03-03 and prepared the evaluator/rerun slice
+Last activity: 2026-04-05 — Completed Phase 3 and queued Phase 4 discussion/planning
 
-Progress: [███████░░░] 70%
+Progress: [████████░░] 80%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 9
-- Average duration: 59 min
-- Total execution time: 9.0 hours
+- Total plans completed: 10
+- Average duration: 57 min
+- Total execution time: 9.5 hours
 
 **By Phase:**
 
@@ -29,10 +29,10 @@ Progress: [███████░░░] 70%
 |-------|-------|-------|----------|
 | 1 | 3 | 192 min | 64 min |
 | 2 | 3 | 172 min | 57.3 min |
-| 3 | 3 | 171 min | 57 min |
+| 3 | 4 | 205 min | 51.3 min |
 
 **Recent Trend:**
-- Last 5 plans: 64 min, 61 min, 92 min, 38 min, 41 min
+- Last 5 plans: 61 min, 92 min, 38 min, 41 min, 34 min
 - Trend: Stable
 
 ## Accumulated Context
@@ -53,6 +53,7 @@ Recent decisions affecting current work:
 - Plan 03-01: Gate the main resume flow on structured JD analysis approval and degrade provider failures to deterministic heuristics
 - Plan 03-02: Ask one vault-informed gap question at a time and persist the answer as canonical session context
 - Plan 03-03: Build the strategist/writer path from draft-safe vault evidence and persist one coherent draft package artifact
+- Plan 03-04: Score drafts before completion and route revisions to the earliest affected stage instead of restarting the session
 
 ### Pending Todos
 
@@ -61,10 +62,10 @@ None yet.
 ### Blockers/Concerns
 
 - External research docs in `.planning/research/` are bootstrap baselines and should be validated during later implementation
-- No active blockers; next step is executing Phase 3 plan `03-04`
+- No active blockers; next step is Phase 4 discussion and planning for the chat-centered workspace
 
 ## Session Continuity
 
 Last session: 2026-04-05 14:09
-Stopped at: Phase 3 plan `03-04` is ready for execution
+Stopped at: Phase 4 discussion/planning is ready to begin
 Resume file: None
