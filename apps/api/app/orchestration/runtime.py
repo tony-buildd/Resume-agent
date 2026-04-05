@@ -18,12 +18,12 @@ from pydantic import BaseModel
 from app.orchestration.blueprint import build_narrative_blueprint
 from app.orchestration.contracts import (
     AdvanceSessionResponse,
+    EvaluationScorecardRecord,
     InterrogationPromptRecord,
     JDAnalysisRecord,
     NarrativeBlueprintRecord,
     InterruptReason,
     ResearchSummaryRecord,
-    ResumePackageRecord,
     RuntimeArtifact,
     RuntimeStage,
     RuntimeTraceEvent,
@@ -32,6 +32,7 @@ from app.orchestration.contracts import (
     StageStatus,
 )
 from app.orchestration.drafting import build_resume_package
+from app.orchestration.evaluation import evaluate_resume_package
 from app.orchestration.interrogation import (
     build_canonical_session_context,
     build_interrogation_prompt,
@@ -74,6 +75,7 @@ def ensure_runtime_state(record: SessionRecord) -> dict[str, Any]:
     runtime.setdefault("research_summary_artifact_id", None)
     runtime.setdefault("blueprint_artifact_id", None)
     runtime.setdefault("draft_package_artifact_id", None)
+    runtime.setdefault("evaluation_artifact_id", None)
     runtime.setdefault("flow", "resume_session")
     runtime.setdefault("updated_at", utc_now().isoformat())
     snapshot["runtime"] = runtime
@@ -296,6 +298,11 @@ def parse_research_summary(runtime: dict[str, Any]) -> ResearchSummaryRecord:
 def parse_narrative_blueprint(runtime: dict[str, Any]) -> NarrativeBlueprintRecord:
     payload = runtime.get("narrative_blueprint") or {}
     return NarrativeBlueprintRecord.model_validate(payload)
+
+
+def parse_evaluation_scorecard(runtime: dict[str, Any]) -> EvaluationScorecardRecord:
+    payload = runtime.get("evaluation_scorecard") or {}
+    return EvaluationScorecardRecord.model_validate(payload)
 
 
 def build_vault_guided_request(runtime: dict[str, Any]) -> GuidedRoleCaptureRequest:
@@ -524,6 +531,8 @@ def advance_session(
     approve_jd_analysis: bool = False,
     approve_blueprint: bool = False,
     approve_checkpoint: bool = False,
+    accept_draft_review: bool = False,
+    request_revision: bool = False,
 ) -> AdvanceSessionResponse:
     runtime = ensure_runtime_state(record)
     latest_answer = answer.strip() if answer else None
@@ -813,6 +822,54 @@ def advance_session(
                 payload=runtime["draft_package"],
             )
             runtime["draft_package_artifact_id"] = draft_package.id
+            scorecard_record = evaluate_resume_package(
+                blueprint=blueprint,
+                package=package_record,
+                analysis=parse_jd_analysis(runtime),
+            )
+            runtime["evaluation_scorecard"] = serialize_model_payload(scorecard_record)
+            scorecard_artifact = upsert_stage_artifact(
+                db,
+                record,
+                stage=stage,
+                kind="evaluation-scorecard",
+                status=ArtifactStatus.CANDIDATE,
+                title="Draft evaluation scorecard",
+                summary="Fit, evidence support, specificity, and overstatement risk for the current draft package.",
+                payload=runtime["evaluation_scorecard"],
+            )
+            runtime["evaluation_artifact_id"] = scorecard_artifact.id
+            if request_revision:
+                rerun_target = parse_evaluation_scorecard(runtime).revision_target_stage
+                if rerun_target is StageKey.DRAFT_REVIEW:
+                    rerun_target = StageKey.BLUEPRINT_REVIEW
+                append_trace(
+                    db,
+                    record,
+                    stage=stage,
+                    message="Draft review requested a targeted rerun from the earliest affected stage.",
+                    payload={"rerunTarget": rerun_target.value},
+                )
+                transition_to(
+                    record,
+                    runtime,
+                    rerun_target,
+                    status=StageStatus.RUNNING,
+                )
+                transition_message = f"draft_review_to_{rerun_target.value}"
+                continue
+
+            if not accept_draft_review:
+                transition_message = interrupt_session(
+                    db,
+                    record,
+                    runtime,
+                    stage=stage,
+                    reason=InterruptReason.AWAITING_DRAFT_REVIEW,
+                    message="Paused for draft review acceptance or targeted revision.",
+                )
+                break
+
             transition_to(
                 record,
                 runtime,
@@ -867,7 +924,7 @@ def build_stage(record: SessionRecord) -> RuntimeStage:
         StageKey.JD_ANALYSIS_REVIEW: "Structured JD analysis and cited research are ready for approval.",
         StageKey.CAREER_INTAKE: "Waiting for or processing raw user experience context.",
         StageKey.BLUEPRINT_REVIEW: "Preparing or awaiting approval of the narrative blueprint.",
-        StageKey.DRAFT_REVIEW: "Draft artifact is ready for review or completion.",
+        StageKey.DRAFT_REVIEW: "Draft package and evaluation scorecard are ready for acceptance or targeted revision.",
         StageKey.COMPLETE: "The phase-one orchestration shell reached completion.",
     }
     return RuntimeStage(
