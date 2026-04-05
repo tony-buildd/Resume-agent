@@ -9,6 +9,10 @@ class Settings(BaseSettings):
     database_url: str = (
         "postgresql+psycopg://postgres:postgres@localhost:5432/resume_agent"
     )
+    chroma_enabled: bool = True
+    chroma_path: str = ".data/chroma"
+    chroma_collection_name: str = "vault_notes"
+    chroma_query_limit: int = 6
 
     model_config = SettingsConfigDict(
         env_file=".env",
