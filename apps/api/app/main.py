@@ -1,11 +1,31 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
+
+from app.api.routes.health import router as health_router
+from app.api.routes.sessions import router as session_router
+from app.config import get_settings
+from app.db.session import initialize_database
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    initialize_database()
+    yield
+
+
+settings = get_settings()
 
 
 app = FastAPI(
-    title="Resume Agent API",
+    title=settings.app_name,
     description="Foundation service shell for the Resume Agent platform.",
     version="0.1.0",
+    lifespan=lifespan,
 )
+
+app.include_router(health_router)
+app.include_router(session_router)
 
 
 @app.get("/")
