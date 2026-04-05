@@ -23,7 +23,8 @@ DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/resume_agent
 
 1. Provision a reachable Postgres database.
 2. Update `DATABASE_URL` with the real credentials.
-3. Start the API once so SQLAlchemy can create the phase-one tables.
+3. If the provider gives you a URL that starts with `postgresql://`, change the prefix to `postgresql+psycopg://` for this Python backend.
+4. Start the API once so SQLAlchemy can create the phase-one tables.
 
 ## Verification Commands
 
