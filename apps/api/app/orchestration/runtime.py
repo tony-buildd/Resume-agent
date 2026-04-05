@@ -13,12 +13,17 @@ from app.db.models import (
     SessionStatus,
     TraceEventRecord,
 )
+from pydantic import BaseModel
+
+from app.orchestration.blueprint import build_narrative_blueprint
 from app.orchestration.contracts import (
     AdvanceSessionResponse,
     InterrogationPromptRecord,
     JDAnalysisRecord,
+    NarrativeBlueprintRecord,
     InterruptReason,
     ResearchSummaryRecord,
+    ResumePackageRecord,
     RuntimeArtifact,
     RuntimeStage,
     RuntimeTraceEvent,
@@ -26,6 +31,7 @@ from app.orchestration.contracts import (
     StageKey,
     StageStatus,
 )
+from app.orchestration.drafting import build_resume_package
 from app.orchestration.interrogation import (
     build_canonical_session_context,
     build_interrogation_prompt,
@@ -67,6 +73,7 @@ def ensure_runtime_state(record: SessionRecord) -> dict[str, Any]:
     runtime.setdefault("jd_analysis_artifact_id", None)
     runtime.setdefault("research_summary_artifact_id", None)
     runtime.setdefault("blueprint_artifact_id", None)
+    runtime.setdefault("draft_package_artifact_id", None)
     runtime.setdefault("flow", "resume_session")
     runtime.setdefault("updated_at", utc_now().isoformat())
     snapshot["runtime"] = runtime
@@ -272,7 +279,7 @@ def mark_vault_checkpoint_approved(record: SessionRecord, runtime: dict[str, Any
     return
 
 
-def serialize_model_payload(model: JDAnalysisRecord | ResearchSummaryRecord) -> dict[str, Any]:
+def serialize_model_payload(model: BaseModel) -> dict[str, Any]:
     return model.model_dump(by_alias=True, mode="json")
 
 
@@ -284,6 +291,11 @@ def parse_jd_analysis(runtime: dict[str, Any]) -> JDAnalysisRecord:
 def parse_research_summary(runtime: dict[str, Any]) -> ResearchSummaryRecord:
     payload = runtime.get("research_summary") or {}
     return ResearchSummaryRecord.model_validate(payload)
+
+
+def parse_narrative_blueprint(runtime: dict[str, Any]) -> NarrativeBlueprintRecord:
+    payload = runtime.get("narrative_blueprint") or {}
+    return NarrativeBlueprintRecord.model_validate(payload)
 
 
 def build_vault_guided_request(runtime: dict[str, Any]) -> GuidedRoleCaptureRequest:
@@ -729,18 +741,26 @@ def advance_session(
             continue
 
         if stage is StageKey.BLUEPRINT_REVIEW:
+            jd_analysis = parse_jd_analysis(runtime)
+            research_summary = parse_research_summary(runtime)
+            blueprint_record = build_narrative_blueprint(
+                db,
+                user=record.user,
+                analysis=jd_analysis,
+                research=research_summary,
+                canonical_context=runtime["canonical_session_context"],
+            )
+            runtime["narrative_blueprint"] = serialize_model_payload(blueprint_record)
             blueprint = upsert_stage_artifact(
                 db,
                 record,
                 stage=stage,
                 kind="blueprint",
                 status=ArtifactStatus.CANDIDATE,
-                title="Phase-one narrative blueprint",
-                summary="A skeletal blueprint built from the captured JD and experience data, ready for approval.",
+                title="Phase-three narrative blueprint",
+                summary="A one-page narrative blueprint built from approved JD context and draft-safe vault evidence.",
                 payload={
-                    "sections": ["header", "skills", "experience", "projects"],
-                    "story": "Match the strongest available experience to the role before drafting.",
-                    "canonicalContextKeys": sorted(runtime["canonical_session_context"].keys()),
+                    "blueprint": runtime["narrative_blueprint"],
                     "approvalState": "pending",
                 },
             )
@@ -774,19 +794,25 @@ def advance_session(
             continue
 
         if stage is StageKey.DRAFT_REVIEW:
-            upsert_stage_artifact(
+            blueprint = parse_narrative_blueprint(runtime)
+            package_record = build_resume_package(
+                blueprint=blueprint,
+                analysis=parse_jd_analysis(runtime),
+                research=parse_research_summary(runtime),
+                email_address=record.user.email_address,
+            )
+            runtime["draft_package"] = serialize_model_payload(package_record)
+            draft_package = upsert_stage_artifact(
                 db,
                 record,
                 stage=stage,
-                kind="resume-draft",
+                kind="draft-package",
                 status=ArtifactStatus.CANDIDATE,
-                title="Phase-one draft placeholder",
-                summary="The foundation runtime can now persist a resumable draft artifact for later phases to replace.",
-                payload={
-                    "format": "markdown",
-                    "status": "placeholder",
-                },
+                title="Tailored resume draft package",
+                summary="Markdown resume plus interview talking points and concern-handling notes generated from the approved blueprint.",
+                payload=runtime["draft_package"],
             )
+            runtime["draft_package_artifact_id"] = draft_package.id
             transition_to(
                 record,
                 runtime,
