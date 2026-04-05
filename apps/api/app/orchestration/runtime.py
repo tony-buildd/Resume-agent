@@ -15,6 +15,7 @@ from app.db.models import (
 )
 from app.orchestration.contracts import (
     AdvanceSessionResponse,
+    InterrogationPromptRecord,
     JDAnalysisRecord,
     InterruptReason,
     ResearchSummaryRecord,
@@ -24,6 +25,10 @@ from app.orchestration.contracts import (
     SessionEnvelope,
     StageKey,
     StageStatus,
+)
+from app.orchestration.interrogation import (
+    build_canonical_session_context,
+    build_interrogation_prompt,
 )
 from app.orchestration.research import generate_jd_analysis_bundle
 from app.vault.contracts import GuidedRoleCaptureRequest, StoryCheckpointRecord
@@ -57,6 +62,7 @@ def ensure_runtime_state(record: SessionRecord) -> dict[str, Any]:
     runtime.setdefault("interrupt_reason", InterruptReason.NONE.value)
     runtime.setdefault("stage_history", [runtime["current_stage"]])
     runtime.setdefault("answers", {})
+    runtime.setdefault("canonical_session_context", {})
     runtime.setdefault("transitions", [])
     runtime.setdefault("jd_analysis_artifact_id", None)
     runtime.setdefault("research_summary_artifact_id", None)
@@ -268,6 +274,16 @@ def mark_vault_checkpoint_approved(record: SessionRecord, runtime: dict[str, Any
 
 def serialize_model_payload(model: JDAnalysisRecord | ResearchSummaryRecord) -> dict[str, Any]:
     return model.model_dump(by_alias=True, mode="json")
+
+
+def parse_jd_analysis(runtime: dict[str, Any]) -> JDAnalysisRecord:
+    payload = runtime.get("job_constraint_profile") or {}
+    return JDAnalysisRecord.model_validate(payload)
+
+
+def parse_research_summary(runtime: dict[str, Any]) -> ResearchSummaryRecord:
+    payload = runtime.get("research_summary") or {}
+    return ResearchSummaryRecord.model_validate(payload)
 
 
 def build_vault_guided_request(runtime: dict[str, Any]) -> GuidedRoleCaptureRequest:
@@ -640,17 +656,29 @@ def advance_session(
             continue
 
         if stage is StageKey.CAREER_INTAKE:
+            jd_analysis = parse_jd_analysis(runtime)
+            research_summary = parse_research_summary(runtime)
+            interrogation_prompt = build_interrogation_prompt(
+                db,
+                user=record.user,
+                analysis=jd_analysis,
+                research=research_summary,
+            )
             upsert_stage_artifact(
                 db,
                 record,
                 stage=stage,
-                kind="question",
+                kind="interrogation-question",
                 status=ArtifactStatus.CANONICAL,
-                title="Provide raw experience details",
-                summary="The orchestrator is waiting for the user's raw experience context before blueprinting.",
+                title=f"Fill the gap for {interrogation_prompt.target_requirement}",
+                summary=interrogation_prompt.why_it_matters,
                 payload={
-                    "prompt": "Share the raw accomplishments, projects, stack, and scope for the most relevant experience.",
-                    "responseKey": "experienceDetails",
+                    "prompt": interrogation_prompt.prompt,
+                    "responseKey": interrogation_prompt.response_key,
+                    "targetRequirement": interrogation_prompt.target_requirement,
+                    "whyItMatters": interrogation_prompt.why_it_matters,
+                    "supportingSignals": interrogation_prompt.supporting_signals,
+                    "evidenceGap": interrogation_prompt.evidence_gap,
                 },
             )
             if not latest_answer:
@@ -664,12 +692,31 @@ def advance_session(
                 )
                 break
 
-            runtime["answers"]["experienceDetails"] = latest_answer
+            runtime["answers"][interrogation_prompt.response_key] = latest_answer
+            runtime["canonical_session_context"] = build_canonical_session_context(
+                runtime,
+                prompt=interrogation_prompt,
+                answer=latest_answer,
+            )
+            upsert_stage_artifact(
+                db,
+                record,
+                stage=stage,
+                kind="session-context",
+                status=ArtifactStatus.CANONICAL,
+                title="Canonical session context",
+                summary="Approved JD context and user-provided gap answers that downstream stages should treat as canonical session state.",
+                payload={
+                    "canonicalContext": runtime["canonical_session_context"],
+                },
+            )
             append_trace(
                 db,
                 record,
                 stage=stage,
-                message="Captured experience details and prepared a blueprint review artifact.",
+                message=(
+                    "Captured the highest-impact interrogation answer and persisted it as canonical session context."
+                ),
             )
             latest_answer = None
             transition_to(
@@ -693,6 +740,7 @@ def advance_session(
                 payload={
                     "sections": ["header", "skills", "experience", "projects"],
                     "story": "Match the strongest available experience to the role before drafting.",
+                    "canonicalContextKeys": sorted(runtime["canonical_session_context"].keys()),
                     "approvalState": "pending",
                 },
             )
