@@ -23,10 +23,16 @@ from app.orchestration.contracts import (
     StageKey,
     StageStatus,
 )
+from app.vault.contracts import GuidedRoleCaptureRequest, StoryCheckpointRecord
+from app.vault.ingestion import build_guided_capture_request, extract_statements
+from app.vault.service import create_vault_role_tree, serialize_vault_role
 
 
 STAGE_LABELS: dict[StageKey, str] = {
     StageKey.BOOTSTRAP: "Bootstrap",
+    StageKey.VAULT_SEED_IMPORT: "Vault Seed Import",
+    StageKey.VAULT_ROLE_INTERVIEW: "Vault Role Interview",
+    StageKey.VAULT_STORY_CHECKPOINT: "Vault Story Checkpoint",
     StageKey.JD_INTAKE: "Job Description Intake",
     StageKey.CAREER_INTAKE: "Career Intake",
     StageKey.BLUEPRINT_REVIEW: "Blueprint Review",
@@ -49,10 +55,17 @@ def ensure_runtime_state(record: SessionRecord) -> dict[str, Any]:
     runtime.setdefault("answers", {})
     runtime.setdefault("transitions", [])
     runtime.setdefault("blueprint_artifact_id", None)
+    runtime.setdefault("flow", "resume_session")
     runtime.setdefault("updated_at", utc_now().isoformat())
     snapshot["runtime"] = runtime
     record.state_snapshot = snapshot
     return runtime
+
+
+def persist_runtime_state(record: SessionRecord, runtime: dict[str, Any]) -> None:
+    snapshot = dict(record.state_snapshot or {})
+    snapshot["runtime"] = runtime
+    record.state_snapshot = snapshot
 
 
 def append_trace(
@@ -188,16 +201,266 @@ def mark_blueprint_approved(record: SessionRecord, runtime: dict[str, Any]) -> N
             return
 
 
+def mark_vault_checkpoint_approved(record: SessionRecord, runtime: dict[str, Any]) -> None:
+    checkpoint_id = runtime.get("vault_checkpoint_artifact_id")
+    if not checkpoint_id:
+        return
+
+    for artifact in record.artifacts:
+        if artifact.id == checkpoint_id:
+            artifact.status = ArtifactStatus.APPROVED
+            artifact.payload = {
+                **artifact.payload,
+                "approvalState": "approved",
+            }
+            return
+
+
+def build_vault_guided_request(runtime: dict[str, Any]) -> GuidedRoleCaptureRequest:
+    return GuidedRoleCaptureRequest(
+        companyName=str(runtime["vault_company_name"]),
+        title=str(runtime["vault_role_title"]),
+        roleSummary=runtime.get("vault_role_summary"),
+        storyName=str(runtime["vault_story_name"]),
+        rawDetails=str(runtime["answers"].get("vaultRoleDetails", "")),
+        stackSummary=runtime.get("vault_stack_summary"),
+        impactSummary=runtime.get("vault_impact_summary"),
+    )
+
+
+def run_vault_ingestion_flow(
+    db: Session,
+    record: SessionRecord,
+    runtime: dict[str, Any],
+    *,
+    latest_answer: str | None,
+    approve_checkpoint: bool,
+) -> tuple[str, str | None]:
+    transition_message = "no-op"
+
+    while True:
+        stage = StageKey(runtime["current_stage"])
+
+        if stage is StageKey.BOOTSTRAP:
+            record.status = SessionStatus.RUNNING
+            append_trace(
+                db,
+                record,
+                stage=StageKey.BOOTSTRAP,
+                message="Vault ingestion session started and advanced to seed import.",
+                payload={"flow": "vault_ingestion"},
+            )
+            transition_to(
+                record,
+                runtime,
+                StageKey.VAULT_SEED_IMPORT,
+                status=StageStatus.RUNNING,
+            )
+            transition_message = "bootstrap_to_vault_seed_import"
+            continue
+
+        if stage is StageKey.VAULT_SEED_IMPORT:
+            upsert_stage_artifact(
+                db,
+                record,
+                stage=stage,
+                kind="vault-question",
+                status=ArtifactStatus.CANONICAL,
+                title="Add seed material or skip",
+                summary="Paste existing resume, portfolio, or profile text for this role, or type 'skip' to go straight to the focused interview.",
+                payload={
+                    "prompt": "Paste seed material for this role, or type 'skip'.",
+                    "responseKey": "vaultSeed",
+                },
+            )
+            if not latest_answer:
+                transition_message = interrupt_session(
+                    db,
+                    record,
+                    runtime,
+                    stage=stage,
+                    reason=InterruptReason.AWAITING_VAULT_SEED,
+                    message="Paused for optional vault seed material.",
+                )
+                break
+
+            runtime["answers"]["vaultSeed"] = latest_answer
+            append_trace(
+                db,
+                record,
+                stage=stage,
+                message="Captured vault seed input and advanced to the focused role interview.",
+            )
+            latest_answer = None
+            transition_to(
+                record,
+                runtime,
+                StageKey.VAULT_ROLE_INTERVIEW,
+                status=StageStatus.RUNNING,
+            )
+            transition_message = "vault_seed_import_to_vault_role_interview"
+            continue
+
+        if stage is StageKey.VAULT_ROLE_INTERVIEW:
+            role_title = runtime.get("vault_role_title", "this role")
+            story_name = runtime.get("vault_story_name", "this story")
+            upsert_stage_artifact(
+                db,
+                record,
+                stage=stage,
+                kind="vault-question",
+                status=ArtifactStatus.CANONICAL,
+                title="Capture one role or project thread",
+                summary=f"Stay within {role_title} and focus only on the {story_name} thread so the vault stores one coherent story at a time.",
+                payload={
+                    "prompt": f"For {role_title}, describe the {story_name} thread only: what you built, the stack, and what changed.",
+                    "responseKey": "vaultRoleDetails",
+                },
+            )
+            if not latest_answer:
+                transition_message = interrupt_session(
+                    db,
+                    record,
+                    runtime,
+                    stage=stage,
+                    reason=InterruptReason.AWAITING_VAULT_ROLE_DETAILS,
+                    message="Paused for focused vault role details.",
+                )
+                break
+
+            runtime["answers"]["vaultRoleDetails"] = latest_answer
+            detail_statements = extract_statements(latest_answer)
+            checkpoint = StoryCheckpointRecord(
+                roleTitle=str(runtime.get("vault_role_title", "Untitled role")),
+                storyName=str(runtime.get("vault_story_name", "Untitled story")),
+                totalFacts=len(detail_statements),
+                draftEligibleFacts=len(detail_statements),
+                pendingReviewFacts=len(detail_statements),
+                suggestedNextQuestion=(
+                    "What concrete scale, metric, or architecture detail is still missing?"
+                    if len(detail_statements) < 3
+                    else "This story is coherent enough for review. Confirm what should stay or be corrected."
+                ),
+                missingSignals=(
+                    ["concrete implementation details"]
+                    if len(detail_statements) < 3
+                    else []
+                ),
+            )
+            checkpoint_artifact = upsert_stage_artifact(
+                db,
+                record,
+                stage=StageKey.VAULT_STORY_CHECKPOINT,
+                kind="vault-checkpoint",
+                status=ArtifactStatus.CANDIDATE,
+                title=f"Review {checkpoint.story_name}",
+                summary="A coherent role/story capture is ready for review before it becomes canonical vault memory.",
+                payload={
+                    "approvalState": "pending",
+                    "rolePreview": {
+                        "companyName": runtime.get("vault_company_name"),
+                        "title": runtime.get("vault_role_title"),
+                        "storyName": runtime.get("vault_story_name"),
+                        "detailPreview": detail_statements[:5],
+                    },
+                    "checkpoint": checkpoint.model_dump(by_alias=True, mode="json"),
+                },
+            )
+            runtime["vault_checkpoint_artifact_id"] = checkpoint_artifact.id
+            append_trace(
+                db,
+                record,
+                stage=stage,
+                message="Captured focused role details and prepared a vault checkpoint review artifact.",
+            )
+            latest_answer = None
+            transition_to(
+                record,
+                runtime,
+                StageKey.VAULT_STORY_CHECKPOINT,
+                status=StageStatus.RUNNING,
+            )
+            transition_message = "vault_role_interview_to_vault_story_checkpoint"
+            continue
+
+        if stage is StageKey.VAULT_STORY_CHECKPOINT:
+            if not approve_checkpoint:
+                transition_message = interrupt_session(
+                    db,
+                    record,
+                    runtime,
+                    stage=stage,
+                    reason=InterruptReason.AWAITING_VAULT_CHECKPOINT_APPROVAL,
+                    message="Paused for vault story checkpoint approval.",
+                )
+                break
+
+            guided_request = build_vault_guided_request(runtime)
+            role_record = create_vault_role_tree(
+                db,
+                user=record.user,
+                payload=build_guided_capture_request(guided_request),
+            )
+            persisted_role = serialize_vault_role(role_record)
+            mark_vault_checkpoint_approved(record, runtime)
+            upsert_stage_artifact(
+                db,
+                record,
+                stage=stage,
+                kind="vault-role-record",
+                status=ArtifactStatus.CANONICAL,
+                title=f"Stored {persisted_role.title}",
+                summary="The reviewed role/story capture is now canonical vault memory.",
+                payload={"role": persisted_role.model_dump(by_alias=True, mode="json")},
+            )
+            append_trace(
+                db,
+                record,
+                stage=stage,
+                message="Vault checkpoint approved and persisted to canonical vault storage.",
+            )
+            transition_to(
+                record,
+                runtime,
+                StageKey.COMPLETE,
+                status=StageStatus.COMPLETE,
+            )
+            record.status = SessionStatus.COMPLETE
+            transition_message = "vault_story_checkpoint_to_complete"
+            break
+
+        break
+
+    return transition_message, latest_answer
+
+
 def advance_session(
     db: Session,
     record: SessionRecord,
     *,
     answer: str | None = None,
     approve_blueprint: bool = False,
+    approve_checkpoint: bool = False,
 ) -> AdvanceSessionResponse:
     runtime = ensure_runtime_state(record)
     latest_answer = answer.strip() if answer else None
     transition_message = "no-op"
+
+    if runtime["flow"] == "vault_ingestion":
+        transition_message, latest_answer = run_vault_ingestion_flow(
+            db,
+            record,
+            runtime,
+            latest_answer=latest_answer,
+            approve_checkpoint=approve_checkpoint,
+        )
+        persist_runtime_state(record, runtime)
+        db.flush()
+        return AdvanceSessionResponse(
+            transition=transition_message,
+            interrupted=record.status == SessionStatus.INTERRUPTED,
+            envelope=build_session_envelope(record),
+        )
 
     while True:
         stage = StageKey(runtime["current_stage"])
@@ -382,6 +645,7 @@ def advance_session(
             transition_message = "already_complete"
             break
 
+    persist_runtime_state(record, runtime)
     db.flush()
     return AdvanceSessionResponse(
         transition=transition_message,
@@ -392,11 +656,24 @@ def advance_session(
 
 def build_stage(record: SessionRecord) -> RuntimeStage:
     runtime = ensure_runtime_state(record)
-    stage_key = StageKey(runtime["current_stage"])
-    stage_status = StageStatus(runtime["stage_status"])
-    interrupt_reason = InterruptReason(runtime["interrupt_reason"])
+    stage_key = StageKey(record.stage or runtime["current_stage"])
+    status_map = {
+        SessionStatus.DRAFT: StageStatus.PENDING,
+        SessionStatus.RUNNING: StageStatus.RUNNING,
+        SessionStatus.INTERRUPTED: StageStatus.INTERRUPTED,
+        SessionStatus.COMPLETE: StageStatus.COMPLETE,
+    }
+    stage_status = status_map[record.status]
+    interrupt_reason = (
+        InterruptReason.NONE
+        if stage_status is StageStatus.COMPLETE
+        else InterruptReason(runtime["interrupt_reason"])
+    )
     summary_map = {
         StageKey.BOOTSTRAP: "Preparing the session runtime.",
+        StageKey.VAULT_SEED_IMPORT: "Waiting for optional imported seed material for one role or project thread.",
+        StageKey.VAULT_ROLE_INTERVIEW: "Waiting for focused role/project details to deepen the vault.",
+        StageKey.VAULT_STORY_CHECKPOINT: "A coherent role/story capture is ready for review before persistence.",
         StageKey.JD_INTAKE: "Waiting for or processing the target job description.",
         StageKey.CAREER_INTAKE: "Waiting for or processing raw user experience context.",
         StageKey.BLUEPRINT_REVIEW: "Preparing or awaiting approval of the narrative blueprint.",

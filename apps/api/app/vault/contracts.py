@@ -192,3 +192,12 @@ class VaultIngestionResponse(BaseModel):
     mode: str
     role: VaultRoleRecord
     checkpoint: StoryCheckpointRecord
+
+
+class CreateVaultInterviewSessionRequest(BaseModel):
+    company_name: str = Field(alias="companyName")
+    title: str
+    story_name: str = Field(alias="storyName")
+    role_summary: str | None = Field(default=None, alias="roleSummary")
+    stack_summary: str | None = Field(default=None, alias="stackSummary")
+    impact_summary: str | None = Field(default=None, alias="impactSummary")
