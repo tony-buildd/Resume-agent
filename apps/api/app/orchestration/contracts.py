@@ -121,6 +121,17 @@ class ResearchSummaryRecord(BaseModel):
     sources: list[ResearchSourceRecord]
 
 
+class InterrogationPromptRecord(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    prompt: str
+    why_it_matters: str = Field(alias="whyItMatters")
+    response_key: str = Field(alias="responseKey")
+    target_requirement: str = Field(alias="targetRequirement")
+    evidence_gap: str = Field(alias="evidenceGap")
+    supporting_signals: list[str] = Field(alias="supportingSignals")
+
+
 class AdvanceSessionRequest(BaseModel):
     answer: str | None = None
     approve_jd_analysis: bool = Field(default=False, alias="approveJdAnalysis")
