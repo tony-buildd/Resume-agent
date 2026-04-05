@@ -146,6 +146,7 @@ def advance_existing_session(
         db,
         record,
         answer=payload.answer,
+        approve_jd_analysis=payload.approve_jd_analysis,
         approve_blueprint=payload.approve_blueprint,
     )
     db.commit()

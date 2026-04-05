@@ -15,7 +15,9 @@ from app.db.models import (
 )
 from app.orchestration.contracts import (
     AdvanceSessionResponse,
+    JDAnalysisRecord,
     InterruptReason,
+    ResearchSummaryRecord,
     RuntimeArtifact,
     RuntimeStage,
     RuntimeTraceEvent,
@@ -23,6 +25,7 @@ from app.orchestration.contracts import (
     StageKey,
     StageStatus,
 )
+from app.orchestration.research import generate_jd_analysis_bundle
 from app.vault.contracts import GuidedRoleCaptureRequest, StoryCheckpointRecord
 from app.vault.ingestion import build_guided_capture_request, extract_statements
 from app.vault.service import create_vault_role_tree, serialize_vault_role
@@ -34,6 +37,7 @@ STAGE_LABELS: dict[StageKey, str] = {
     StageKey.VAULT_ROLE_INTERVIEW: "Vault Role Interview",
     StageKey.VAULT_STORY_CHECKPOINT: "Vault Story Checkpoint",
     StageKey.JD_INTAKE: "Job Description Intake",
+    StageKey.JD_ANALYSIS_REVIEW: "JD Analysis Review",
     StageKey.CAREER_INTAKE: "Career Intake",
     StageKey.BLUEPRINT_REVIEW: "Blueprint Review",
     StageKey.DRAFT_REVIEW: "Draft Review",
@@ -54,6 +58,8 @@ def ensure_runtime_state(record: SessionRecord) -> dict[str, Any]:
     runtime.setdefault("stage_history", [runtime["current_stage"]])
     runtime.setdefault("answers", {})
     runtime.setdefault("transitions", [])
+    runtime.setdefault("jd_analysis_artifact_id", None)
+    runtime.setdefault("research_summary_artifact_id", None)
     runtime.setdefault("blueprint_artifact_id", None)
     runtime.setdefault("flow", "resume_session")
     runtime.setdefault("updated_at", utc_now().isoformat())
@@ -201,6 +207,25 @@ def mark_blueprint_approved(record: SessionRecord, runtime: dict[str, Any]) -> N
             return
 
 
+def mark_artifact_approved(record: SessionRecord, artifact_id: str | None) -> None:
+    if not artifact_id:
+        return
+
+    for artifact in record.artifacts:
+        if artifact.id == artifact_id:
+            artifact.status = ArtifactStatus.APPROVED
+            artifact.payload = {
+                **artifact.payload,
+                "approvalState": "approved",
+            }
+            return
+
+
+def mark_jd_analysis_approved(record: SessionRecord, runtime: dict[str, Any]) -> None:
+    mark_artifact_approved(record, runtime.get("jd_analysis_artifact_id"))
+    mark_artifact_approved(record, runtime.get("research_summary_artifact_id"))
+
+
 def mark_vault_checkpoint_approved(record: SessionRecord, runtime: dict[str, Any]) -> None:
     checkpoint_id = runtime.get("vault_checkpoint_artifact_id")
     if not checkpoint_id:
@@ -213,7 +238,11 @@ def mark_vault_checkpoint_approved(record: SessionRecord, runtime: dict[str, Any
                 **artifact.payload,
                 "approvalState": "approved",
             }
-            return
+    return
+
+
+def serialize_model_payload(model: JDAnalysisRecord | ResearchSummaryRecord) -> dict[str, Any]:
+    return model.model_dump(by_alias=True, mode="json")
 
 
 def build_vault_guided_request(runtime: dict[str, Any]) -> GuidedRoleCaptureRequest:
@@ -439,6 +468,7 @@ def advance_session(
     record: SessionRecord,
     *,
     answer: str | None = None,
+    approve_jd_analysis: bool = False,
     approve_blueprint: bool = False,
     approve_checkpoint: bool = False,
 ) -> AdvanceSessionResponse:
@@ -508,20 +538,80 @@ def advance_session(
                 break
 
             runtime["answers"]["jobDescription"] = latest_answer
+            analysis, research = generate_jd_analysis_bundle(latest_answer)
+            runtime["job_constraint_profile"] = serialize_model_payload(analysis)
+            runtime["research_summary"] = serialize_model_payload(research)
+
+            jd_analysis = upsert_stage_artifact(
+                db,
+                record,
+                stage=StageKey.JD_ANALYSIS_REVIEW,
+                kind="jd-analysis",
+                status=ArtifactStatus.CANDIDATE,
+                title="Structured JD analysis",
+                summary="The job description has been parsed into requirements, archetype, and success signals for approval.",
+                payload={
+                    "approvalState": "pending",
+                    "analysis": runtime["job_constraint_profile"],
+                },
+            )
+            research_summary = upsert_stage_artifact(
+                db,
+                record,
+                stage=StageKey.JD_ANALYSIS_REVIEW,
+                kind="research-summary",
+                status=ArtifactStatus.CANDIDATE,
+                title="Role and company strategy summary",
+                summary="Cited research findings and a concise strategy summary for how the resume should shift.",
+                payload={
+                    "approvalState": "pending",
+                    "research": runtime["research_summary"],
+                },
+            )
+            runtime["jd_analysis_artifact_id"] = jd_analysis.id
+            runtime["research_summary_artifact_id"] = research_summary.id
             append_trace(
                 db,
                 record,
                 stage=stage,
-                message="Captured job description input and advanced to career intake.",
+                message="Captured job description input and prepared JD analysis and research artifacts.",
             )
             latest_answer = None
+            transition_to(
+                record,
+                runtime,
+                StageKey.JD_ANALYSIS_REVIEW,
+                status=StageStatus.RUNNING,
+            )
+            transition_message = "jd_intake_to_jd_analysis_review"
+            continue
+
+        if stage is StageKey.JD_ANALYSIS_REVIEW:
+            if not approve_jd_analysis:
+                transition_message = interrupt_session(
+                    db,
+                    record,
+                    runtime,
+                    stage=stage,
+                    reason=InterruptReason.AWAITING_JD_ANALYSIS_APPROVAL,
+                    message="Paused for JD analysis and research approval.",
+                )
+                break
+
+            mark_jd_analysis_approved(record, runtime)
+            append_trace(
+                db,
+                record,
+                stage=stage,
+                message="JD analysis approved and advanced to career intake.",
+            )
             transition_to(
                 record,
                 runtime,
                 StageKey.CAREER_INTAKE,
                 status=StageStatus.RUNNING,
             )
-            transition_message = "jd_intake_to_career_intake"
+            transition_message = "jd_analysis_review_to_career_intake"
             continue
 
         if stage is StageKey.CAREER_INTAKE:
@@ -675,6 +765,7 @@ def build_stage(record: SessionRecord) -> RuntimeStage:
         StageKey.VAULT_ROLE_INTERVIEW: "Waiting for focused role/project details to deepen the vault.",
         StageKey.VAULT_STORY_CHECKPOINT: "A coherent role/story capture is ready for review before persistence.",
         StageKey.JD_INTAKE: "Waiting for or processing the target job description.",
+        StageKey.JD_ANALYSIS_REVIEW: "Structured JD analysis and cited research are ready for approval.",
         StageKey.CAREER_INTAKE: "Waiting for or processing raw user experience context.",
         StageKey.BLUEPRINT_REVIEW: "Preparing or awaiting approval of the narrative blueprint.",
         StageKey.DRAFT_REVIEW: "Draft artifact is ready for review or completion.",
