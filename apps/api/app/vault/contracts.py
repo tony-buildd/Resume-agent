@@ -201,3 +201,30 @@ class CreateVaultInterviewSessionRequest(BaseModel):
     role_summary: str | None = Field(default=None, alias="roleSummary")
     stack_summary: str | None = Field(default=None, alias="stackSummary")
     impact_summary: str | None = Field(default=None, alias="impactSummary")
+
+
+class VaultRetrievalRequest(BaseModel):
+    query: str | None = None
+    limit: int = Field(default=5, ge=1, le=20)
+    include_semantic: bool = Field(default=True, alias="includeSemantic")
+
+
+class VaultSemanticMatchRecord(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    id: str
+    document: str
+    metadata: dict[str, object]
+    distance: float | None = None
+
+
+class VaultRetrievalResponse(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    query: str | None = None
+    draft_safe_roles: list[VaultRoleRecord] = Field(alias="draftSafeRoles")
+    questioning_safe_roles: list[VaultRoleRecord] = Field(alias="questioningSafeRoles")
+    semantic_matches: list[VaultSemanticMatchRecord] = Field(
+        default_factory=list,
+        alias="semanticMatches",
+    )
