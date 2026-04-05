@@ -149,3 +149,46 @@ class VaultRoleRecord(BaseModel):
     project_stories: list[VaultProjectStoryRecord] = Field(alias="projectStories")
     created_at: datetime = Field(alias="createdAt")
     updated_at: datetime = Field(alias="updatedAt")
+
+
+class SeedImportRequest(BaseModel):
+    company_name: str = Field(alias="companyName")
+    title: str
+    seed_text: str = Field(alias="seedText")
+    story_name: str | None = Field(default=None, alias="storyName")
+    start_date: str | None = Field(default=None, alias="startDate")
+    end_date: str | None = Field(default=None, alias="endDate")
+    location: str | None = None
+
+
+class GuidedRoleCaptureRequest(BaseModel):
+    company_name: str = Field(alias="companyName")
+    title: str
+    role_summary: str | None = Field(default=None, alias="roleSummary")
+    story_name: str = Field(alias="storyName")
+    raw_details: str = Field(alias="rawDetails")
+    stack_summary: str | None = Field(default=None, alias="stackSummary")
+    impact_summary: str | None = Field(default=None, alias="impactSummary")
+    start_date: str | None = Field(default=None, alias="startDate")
+    end_date: str | None = Field(default=None, alias="endDate")
+    location: str | None = None
+
+
+class StoryCheckpointRecord(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    role_title: str = Field(alias="roleTitle")
+    story_name: str = Field(alias="storyName")
+    total_facts: int = Field(alias="totalFacts")
+    draft_eligible_facts: int = Field(alias="draftEligibleFacts")
+    pending_review_facts: int = Field(alias="pendingReviewFacts")
+    suggested_next_question: str = Field(alias="suggestedNextQuestion")
+    missing_signals: list[str] = Field(alias="missingSignals")
+
+
+class VaultIngestionResponse(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    mode: str
+    role: VaultRoleRecord
+    checkpoint: StoryCheckpointRecord
