@@ -1,15 +1,21 @@
 from __future__ import annotations
 
-from datetime import datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Header, HTTPException, status
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.db.models import AppUser, SessionRecord
 from app.db.session import get_db_session
+from app.orchestration.contracts import (
+    AdvanceSessionRequest,
+    AdvanceSessionResponse,
+    CreateSessionRequest,
+    SessionEnvelope,
+)
+from app.orchestration.runtime import advance_session, build_session_envelope
 
 router = APIRouter(prefix="/api/sessions", tags=["sessions"])
 
@@ -17,26 +23,6 @@ router = APIRouter(prefix="/api/sessions", tags=["sessions"])
 class AuthContext(BaseModel):
     clerk_user_id: str
     email_address: str | None = None
-
-
-class CreateSessionRequest(BaseModel):
-    title: str | None = None
-    stage: str = "bootstrap"
-
-
-class SessionEnvelope(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
-
-    id: str
-    user_id: str = Field(alias="userId")
-    clerk_user_id: str = Field(alias="clerkUserId")
-    title: str | None = None
-    stage: str
-    status: str
-    artifact_count: int = Field(alias="artifactCount")
-    trace_event_count: int = Field(alias="traceEventCount")
-    created_at: datetime = Field(alias="createdAt")
-    updated_at: datetime = Field(alias="updatedAt")
 
 
 DbSession = Annotated[Session, Depends(get_db_session)]
@@ -71,22 +57,40 @@ def get_or_create_user(db: Session, auth: AuthContext) -> AppUser:
         db.add(user)
         db.flush()
 
+    elif auth.email_address and user.email_address != auth.email_address:
+        user.email_address = auth.email_address
+        db.flush()
+
     return user
 
 
-def to_session_envelope(record: SessionRecord, auth: AuthContext) -> SessionEnvelope:
-    return SessionEnvelope(
-        id=record.id,
-        userId=record.user_id,
-        clerkUserId=auth.clerk_user_id,
-        title=record.title,
-        stage=record.stage,
-        status=record.status.value,
-        artifactCount=len(record.artifacts),
-        traceEventCount=len(record.trace_events),
-        createdAt=record.created_at,
-        updatedAt=record.updated_at,
+def get_user_owned_session(
+    db: Session,
+    *,
+    session_id: str,
+    clerk_user_id: str,
+) -> SessionRecord:
+    record = db.scalar(
+        select(SessionRecord)
+        .join(AppUser)
+        .options(
+            selectinload(SessionRecord.user),
+            selectinload(SessionRecord.artifacts),
+            selectinload(SessionRecord.trace_events),
+        )
+        .where(
+            SessionRecord.id == session_id,
+            AppUser.clerk_user_id == clerk_user_id,
+        )
     )
+
+    if record is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Session not found for current user.",
+        )
+
+    return record
 
 
 @router.post("", response_model=SessionEnvelope, status_code=status.HTTP_201_CREATED)
@@ -99,12 +103,17 @@ def create_session(
     record = SessionRecord(
         user_id=user.id,
         title=payload.title,
-        stage=payload.stage,
+        stage=payload.stage.value,
     )
+    record.user = user
     db.add(record)
+    db.flush()
+
+    advance_session(db, record)
+
     db.commit()
     db.refresh(record)
-    return to_session_envelope(record, auth)
+    return build_session_envelope(record, auth.clerk_user_id)
 
 
 @router.get("/{session_id}", response_model=SessionEnvelope)
@@ -113,19 +122,36 @@ def get_session(
     auth: Annotated[AuthContext, Depends(get_auth_context)],
     db: DbSession,
 ) -> SessionEnvelope:
-    record = db.scalar(
-        select(SessionRecord)
-        .join(AppUser)
-        .where(
-            SessionRecord.id == session_id,
-            AppUser.clerk_user_id == auth.clerk_user_id,
-        )
+    record = get_user_owned_session(
+        db,
+        session_id=session_id,
+        clerk_user_id=auth.clerk_user_id,
     )
+    return build_session_envelope(record, auth.clerk_user_id)
 
-    if record is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Session not found for current user.",
-        )
 
-    return to_session_envelope(record, auth)
+@router.post("/{session_id}/advance", response_model=AdvanceSessionResponse)
+def advance_existing_session(
+    session_id: str,
+    payload: AdvanceSessionRequest,
+    auth: Annotated[AuthContext, Depends(get_auth_context)],
+    db: DbSession,
+) -> AdvanceSessionResponse:
+    record = get_user_owned_session(
+        db,
+        session_id=session_id,
+        clerk_user_id=auth.clerk_user_id,
+    )
+    response = advance_session(
+        db,
+        record,
+        answer=payload.answer,
+        approve_blueprint=payload.approve_blueprint,
+    )
+    db.commit()
+    db.refresh(record)
+    return AdvanceSessionResponse(
+        transition=response.transition,
+        interrupted=response.interrupted,
+        envelope=build_session_envelope(record, auth.clerk_user_id),
+    )
