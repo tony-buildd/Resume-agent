@@ -1,14 +1,14 @@
 ---
-status: partial
+status: complete
 phase: 01-foundations
 source: 01-01-SUMMARY.md, 01-02-SUMMARY.md, 01-03-SUMMARY.md
 started: 2026-04-05T17:45:00-07:00
-updated: 2026-04-05T17:45:00-07:00
+updated: 2026-04-05T22:09:00-07:00
 ---
 
 ## Current Test
 
-[testing paused — 1 items outstanding]
+[testing complete]
 
 ## Tests
 
@@ -30,18 +30,16 @@ result: pass
 
 ### 5. Live Clerk + Postgres end-to-end verification
 expected: With real Clerk keys and a reachable Postgres database, `/workspace` redirects unauthenticated users, the API accepts authenticated identity headers, and session state persists through the configured database.
-result: blocked
-blocked_by: third-party
-reason: "Waiting on real Clerk keys and a reachable Postgres DATABASE_URL for live end-to-end verification."
+result: pass
 
 ## Summary
 
 total: 5
-passed: 4
+passed: 5
 issues: 0
 pending: 0
 skipped: 0
-blocked: 1
+blocked: 0
 
 ## Gaps
 
