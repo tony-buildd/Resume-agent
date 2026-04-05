@@ -5,6 +5,9 @@ import { auth, currentUser } from "@clerk/nextjs/server";
 
 export type StageKey =
   | "bootstrap"
+  | "vault_seed_import"
+  | "vault_role_interview"
+  | "vault_story_checkpoint"
   | "jd_intake"
   | "career_intake"
   | "blueprint_review"
