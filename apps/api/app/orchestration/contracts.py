@@ -12,6 +12,7 @@ class StageKey(str, Enum):
     VAULT_ROLE_INTERVIEW = "vault_role_interview"
     VAULT_STORY_CHECKPOINT = "vault_story_checkpoint"
     JD_INTAKE = "jd_intake"
+    JD_ANALYSIS_REVIEW = "jd_analysis_review"
     CAREER_INTAKE = "career_intake"
     BLUEPRINT_REVIEW = "blueprint_review"
     DRAFT_REVIEW = "draft_review"
@@ -30,6 +31,7 @@ class InterruptReason(str, Enum):
     AWAITING_VAULT_ROLE_DETAILS = "awaiting_vault_role_details"
     AWAITING_VAULT_CHECKPOINT_APPROVAL = "awaiting_vault_checkpoint_approval"
     AWAITING_JOB_DESCRIPTION = "awaiting_job_description"
+    AWAITING_JD_ANALYSIS_APPROVAL = "awaiting_jd_analysis_approval"
     AWAITING_EXPERIENCE_DETAILS = "awaiting_experience_details"
     AWAITING_BLUEPRINT_APPROVAL = "awaiting_blueprint_approval"
     NONE = "none"
@@ -88,8 +90,40 @@ class CreateSessionRequest(BaseModel):
     stage: StageKey = StageKey.BOOTSTRAP
 
 
+class ResearchSourceRecord(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    title: str
+    url: str | None = None
+    note: str | None = None
+
+
+class JDAnalysisRecord(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    top_requirements: list[str] = Field(alias="topRequirements")
+    primary_focus: str = Field(alias="primaryFocus")
+    repeating_terms: list[str] = Field(alias="repeatingTerms")
+    expected_level: str = Field(alias="expectedLevel")
+    engineering_archetype: str = Field(alias="engineeringArchetype")
+    business_impact: str = Field(alias="businessImpact")
+    success_definition: list[str] = Field(alias="successDefinition")
+
+
+class ResearchSummaryRecord(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    company_name: str | None = Field(default=None, alias="companyName")
+    role_title: str | None = Field(default=None, alias="roleTitle")
+    strategic_summary: str = Field(alias="strategicSummary")
+    market_signals: list[str] = Field(alias="marketSignals")
+    source_notes: list[str] = Field(alias="sourceNotes")
+    sources: list[ResearchSourceRecord]
+
+
 class AdvanceSessionRequest(BaseModel):
     answer: str | None = None
+    approve_jd_analysis: bool = Field(default=False, alias="approveJdAnalysis")
     approve_blueprint: bool = Field(default=False, alias="approveBlueprint")
     approve_checkpoint: bool = Field(default=False, alias="approveCheckpoint")
 
