@@ -21,6 +21,8 @@ from app.vault.contracts import (
     GuidedRoleCaptureRequest,
     SeedImportRequest,
     VaultIngestionResponse,
+    VaultRetrievalRequest,
+    VaultRetrievalResponse,
     VaultRoleRecord,
 )
 from app.vault.ingestion import (
@@ -28,6 +30,7 @@ from app.vault.ingestion import (
     build_ingestion_response,
     build_seed_import_request,
 )
+from app.vault.retrieval import retrieve_vault_context
 from app.vault.service import (
     base_vault_role_query,
     create_vault_role_tree,
@@ -67,6 +70,22 @@ def get_vault_roles(
     user = get_or_create_user(db, auth)
     records = list_vault_roles(db, user=user)
     return [serialize_vault_role(record) for record in records]
+
+
+@router.post("/retrieval", response_model=VaultRetrievalResponse)
+def retrieve_vault(
+    payload: VaultRetrievalRequest,
+    auth: Annotated[AuthContext, Depends(get_auth_context)],
+    db: DbSession,
+) -> VaultRetrievalResponse:
+    user = get_or_create_user(db, auth)
+    return retrieve_vault_context(
+        db,
+        user=user,
+        query=payload.query,
+        limit=payload.limit,
+        include_semantic=payload.include_semantic,
+    )
 
 
 @router.post("/imports/seed", response_model=VaultIngestionResponse, status_code=201)
