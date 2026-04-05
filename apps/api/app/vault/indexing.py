@@ -116,7 +116,7 @@ def build_role_index_documents(*, user_id: str, role: VaultRoleRecord) -> list[V
             )
         )
 
-    for fact in role.roleFacts:
+    for fact in role.role_facts:
         documents.append(
             VaultIndexDocument(
                 id=f"fact:{fact.id}",
@@ -127,36 +127,40 @@ def build_role_index_documents(*, user_id: str, role: VaultRoleRecord) -> list[V
                     "record_type": "fact",
                     "company_name": role.company.name,
                     "role_title": role.title,
-                    "review_state": fact.reviewState,
-                    "draft_eligible": str(fact.draftEligible).lower(),
-                    "source_type": fact.sourceType,
-                },
+                        "review_state": fact.review_state,
+                        "draft_eligible": str(fact.draft_eligible).lower(),
+                        "source_type": fact.source_type,
+                    },
+                )
             )
-        )
 
-    for bullet in role.roleBulletCandidates:
+    for bullet in role.role_bullet_candidates:
         documents.append(
             VaultIndexDocument(
                 id=f"bullet:{bullet.id}",
-                document=build_bullet_document(role_context=role_context, text=bullet.text, story_angle=bullet.storyAngle),
+                document=build_bullet_document(
+                    role_context=role_context,
+                    text=bullet.text,
+                    story_angle=bullet.story_angle,
+                ),
                 metadata={
                     "user_id": user_id,
                     "role_id": role.id,
                     "record_type": "bullet",
                     "company_name": role.company.name,
                     "role_title": role.title,
-                    "review_state": bullet.reviewState,
-                    "draft_eligible": str(bullet.draftEligible).lower(),
-                    "source_type": bullet.sourceType,
+                    "review_state": bullet.review_state,
+                    "draft_eligible": str(bullet.draft_eligible).lower(),
+                    "source_type": bullet.source_type,
                 },
             )
         )
 
-    for story in role.projectStories:
+    for story in role.project_stories:
         story_context = f"{role_context} {story.name}".strip()
         story_body = "\n".join(
             part
-            for part in [story.summary, story.stackSummary, story.impactSummary]
+            for part in [story.summary, story.stack_summary, story.impact_summary]
             if part
         )
         if story_body:
@@ -172,9 +176,9 @@ def build_role_index_documents(*, user_id: str, role: VaultRoleRecord) -> list[V
                         "company_name": role.company.name,
                         "role_title": role.title,
                         "story_name": story.name,
-                        "review_state": story.reviewState,
-                        "draft_eligible": str(story.draftEligible).lower(),
-                        "source_type": story.sourceType,
+                        "review_state": story.review_state,
+                        "draft_eligible": str(story.draft_eligible).lower(),
+                        "source_type": story.source_type,
                     },
                 )
             )
@@ -196,21 +200,21 @@ def build_role_index_documents(*, user_id: str, role: VaultRoleRecord) -> list[V
                         "company_name": role.company.name,
                         "role_title": role.title,
                         "story_name": story.name,
-                        "review_state": fact.reviewState,
-                        "draft_eligible": str(fact.draftEligible).lower(),
-                        "source_type": fact.sourceType,
+                        "review_state": fact.review_state,
+                        "draft_eligible": str(fact.draft_eligible).lower(),
+                        "source_type": fact.source_type,
                     },
                 )
             )
 
-        for bullet in story.bulletCandidates:
+        for bullet in story.bullet_candidates:
             documents.append(
                 VaultIndexDocument(
                     id=f"bullet:{bullet.id}",
                     document=build_bullet_document(
                         role_context=story_context,
                         text=bullet.text,
-                        story_angle=bullet.storyAngle,
+                        story_angle=bullet.story_angle,
                     ),
                     metadata={
                         "user_id": user_id,
@@ -220,9 +224,9 @@ def build_role_index_documents(*, user_id: str, role: VaultRoleRecord) -> list[V
                         "company_name": role.company.name,
                         "role_title": role.title,
                         "story_name": story.name,
-                        "review_state": bullet.reviewState,
-                        "draft_eligible": str(bullet.draftEligible).lower(),
-                        "source_type": bullet.sourceType,
+                        "review_state": bullet.review_state,
+                        "draft_eligible": str(bullet.draft_eligible).lower(),
+                        "source_type": bullet.source_type,
                     },
                 )
             )
