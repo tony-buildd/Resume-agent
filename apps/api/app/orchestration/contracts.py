@@ -132,6 +132,73 @@ class InterrogationPromptRecord(BaseModel):
     supporting_signals: list[str] = Field(alias="supportingSignals")
 
 
+class BlueprintBulletRecord(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    bullet_id: str = Field(alias="bulletId")
+    text: str
+    source_story_id: str | None = Field(default=None, alias="sourceStoryId")
+    source_story_name: str | None = Field(default=None, alias="sourceStoryName")
+    rationale: str
+
+
+class BlueprintRoleRecord(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    role_id: str = Field(alias="roleId")
+    company_name: str = Field(alias="companyName")
+    role_title: str = Field(alias="roleTitle")
+    why_selected: str = Field(alias="whySelected")
+    selected_bullets: list[BlueprintBulletRecord] = Field(alias="selectedBullets")
+    selected_story_names: list[str] = Field(default_factory=list, alias="selectedStoryNames")
+
+
+class BlueprintSectionRecord(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    key: str
+    label: str
+    included: bool
+    max_items: int = Field(alias="maxItems")
+
+
+class NarrativeBlueprintRecord(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    narrative_angle: str = Field(alias="narrativeAngle")
+    headline_focus: str = Field(alias="headlineFocus")
+    keyword_priorities: list[str] = Field(alias="keywordPriorities")
+    skills_focus: list[str] = Field(alias="skillsFocus")
+    selected_roles: list[BlueprintRoleRecord] = Field(alias="selectedRoles")
+    sections: list[BlueprintSectionRecord]
+    omitted_signals: list[str] = Field(alias="omittedSignals")
+    one_page_strategy: str = Field(alias="onePageStrategy")
+
+
+class InterviewTalkingPointRecord(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    title: str
+    prompt: str
+
+
+class ConcernHandlingNoteRecord(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    concern: str
+    mitigation: str
+
+
+class ResumePackageRecord(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    markdown_resume: str = Field(alias="markdownResume")
+    talking_points: list[InterviewTalkingPointRecord] = Field(alias="talkingPoints")
+    concern_handling_notes: list[ConcernHandlingNoteRecord] = Field(
+        alias="concernHandlingNotes"
+    )
+
+
 class AdvanceSessionRequest(BaseModel):
     answer: str | None = None
     approve_jd_analysis: bool = Field(default=False, alias="approveJdAnalysis")
