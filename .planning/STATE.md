@@ -5,33 +5,34 @@
 See: .planning/PROJECT.md (updated 2026-04-05)
 
 **Core value:** Turn fragmented career context into a credible, strategically tailored one-page resume that matches a target role without hiding how the system reached its recommendations.
-**Current focus:** Phase 2: Career Vault
+**Current focus:** Phase 3: Resume Session Flow
 
 ## Current Position
 
-Phase: 2 of 5 (Career Vault)
-Plan: 3 of 3 in current phase
-Status: Ready to execute
-Last activity: 2026-04-05 — Executed plan 02-02 and recorded the phase summary
+Phase: 3 of 5 (Resume Session Flow)
+Plan: 0 of 4 in current phase
+Status: Ready for discussion
+Last activity: 2026-04-06 — Completed Phase 2 verification and closed Career Vault
 
-Progress: [████████░░] 80%
+Progress: [██████░░░░] 60%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 5
+- Total plans completed: 6
 - Average duration: 62 min
-- Total execution time: 5.2 hours
+- Total execution time: 6.2 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1 | 3 | 192 min | 64 min |
-| 2 | 2 | 111 min | 55.5 min |
+| 2 | 3 | 172 min | 57.3 min |
+| 3 | 0 | 0 min | - |
 
 **Recent Trend:**
-- Last 5 plans: 55 min, 58 min, 79 min, 47 min, 64 min
+- Last 5 plans: 58 min, 79 min, 47 min, 64 min, 61 min
 - Trend: Stable
 
 ## Accumulated Context
@@ -48,6 +49,7 @@ Recent decisions affecting current work:
 - Plan 01-03: Keep the runtime deterministic in phase 1 while locking the typed session/artifact/trace contract surface
 - Plan 02-01: Separate canonical facts from candidate bullets and link them through explicit supporting-fact relationships
 - Plan 02-02: Run vault ingestion through the same resumable session shell and stop at a checkpoint before persisting canonical memory
+- Plan 02-03: Combine semantic recall with explicit relational review-state filtering instead of letting vectors decide drafting safety
 
 ### Pending Todos
 
@@ -56,10 +58,10 @@ None yet.
 ### Blockers/Concerns
 
 - External research docs in `.planning/research/` are bootstrap baselines and should be validated during later implementation
-- No active blockers; next step is executing Phase 2 plan `02-03`
+- No active blockers; next step is discussing Phase 3 scope and plan slices
 
 ## Session Continuity
 
 Last session: 2026-04-05 14:09
-Stopped at: Phase 2 plan `02-03` is ready for execution
+Stopped at: Phase 3 discussion is the next GSD step
 Resume file: None
