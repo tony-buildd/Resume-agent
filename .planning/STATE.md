@@ -5,15 +5,15 @@
 See: .planning/PROJECT.md (updated 2026-04-05)
 
 **Core value:** Turn fragmented career context into a credible, strategically tailored one-page resume that matches a target role without hiding how the system reached its recommendations.
-**Current focus:** Capability routing milestone execution
+**Current focus:** Progressive UX milestone execution
 
 ## Current Position
 
-Phase: 10 of 11 (Capability Routing and Research Orchestration)
-Plan: 10-01
+Phase: 11 of 11 (Progressive UX and Control Surfaces)
+Plan: 11-01
 Status: In Progress
-Last activity: 2026-04-05 — Completed Phase 9 adaptive evaluation and queued Phase 10 capability routing
-Progress: [████████░░] 82%
+Last activity: 2026-04-05 — Completed Phase 10 capability routing and queued Phase 11 progressive UX
+Progress: [█████████░] 91%
 
 ## Performance Metrics
 
@@ -78,8 +78,8 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-- Start Phase 10 by adding a capability registry and route summary surface.
-- Carry forward the paper-review findings as acceptance checks for Phase 10.
+- Start Phase 11 by exposing interruption, evidence, and route controls progressively in the workspace.
+- Carry forward the paper-review findings as acceptance checks for the final UX phase.
 
 ### Blockers/Concerns
 
@@ -88,6 +88,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-04-06 02:09
-Stopped at: Phase 9 complete; next step is Phase 10 capability routing and research orchestration
+Last session: 2026-04-06 03:01
+Stopped at: Phase 10 complete; next step is Phase 11 progressive UX and control surfaces
 Resume file: None

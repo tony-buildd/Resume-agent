@@ -20,7 +20,7 @@ This roadmap builds Resume Agent from project skeleton to a hardened, inspectabl
 - [x] **Phase 7: Runtime Hardening and Memory Safety** - Split trust from safety, add interruption intents, delta replanning, and quarantine/feasibility enforcement.
 - [x] **Phase 8: Hierarchical Retrieval and Context Budgeting** - Replace flat retrieval with role/story/evidence selection and budget-aware context assembly.
 - [x] **Phase 9: Adaptive Evaluation and Review Loop** - Replace the shallow evaluator with role-aware rubrics, trajectory judgments, and replayable QA fixtures.
-- [ ] **Phase 10: Capability Routing and Research Orchestration** - Add a capability registry, API-first routing policy, and multi-pass research artifacts with citations.
+- [x] **Phase 10: Capability Routing and Research Orchestration** - Add a capability registry, API-first routing policy, and multi-pass research artifacts with citations.
 - [ ] **Phase 11: Progressive UX and Control Surfaces** - Expose interruption, evidence, risk, and route controls progressively without overwhelming the workspace.
 
 ## Phase Details
@@ -201,9 +201,9 @@ Plans:
 
 Plans:
 
-- [ ] 10-01: Implement the capability registry and route metadata surface.
-- [ ] 10-02: Refactor research into plan -> source bundle -> synthesis artifacts with capability-aware execution.
-- [ ] 10-03: Add route traces and the paper-to-design helper flow for architecture research.
+- [x] 10-01: Implement the capability registry and route metadata surface.
+- [x] 10-02: Refactor research into plan -> source bundle -> synthesis artifacts with capability-aware execution.
+- [x] 10-03: Add route traces and the paper-to-design helper flow for architecture research.
 
 ### Phase 11: Progressive UX and Control Surfaces
 
