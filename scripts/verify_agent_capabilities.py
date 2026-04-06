@@ -45,8 +45,9 @@ def check_command(name: str) -> str:
 
 def check_python_module(name: str) -> str:
     present = importlib.util.find_spec(name) is not None
-    status = "PASS" if present else "WARN"
-    return f"{status} module:{name} -> {'available' if present else 'not installed'}"
+    status = "PASS" if present else "INFO"
+    detail = "available in current interpreter" if present else "not installed in current interpreter"
+    return f"{status} module:{name} -> {detail}"
 
 
 def main() -> None:

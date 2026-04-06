@@ -16,7 +16,7 @@ This roadmap builds Resume Agent from project skeleton to a production-ready MVP
 - [x] **Phase 3: Resume Session Flow** - Implement JD analysis, research, interrogation, blueprint approval, drafting, and evaluator-driven revision loops.
 - [x] **Phase 4: Frontend Experience** - Build the chat-first workspace with contextual panels, inline approvals, diffs, and trace views.
 - [x] **Phase 5: Ship / Polish** - Harden operations, documentation, onboarding, and release packaging for a usable MVP.
-- [ ] **Phase 6: Agent Capability Integration** - Add Codex-native wrappers, bootstrap scripts, and docs for external skill ecosystems and agent tooling.
+- [x] **Phase 6: Agent Capability Integration** - Add Codex-native wrappers, bootstrap scripts, and docs for external skill ecosystems and agent tooling.
 
 ## Phase Details
 
@@ -124,14 +124,14 @@ Plans:
 
 Plans:
 
-- [ ] 06-01: Set up the capability bootstrap layer and install/adapt the selected external skill sources for Codex.
-- [ ] 06-02: Add Codex-native Browser Use, Hermes, and Paper2Code integration surfaces.
-- [ ] 06-03: Verify the capability stack and document how to use it from this repo.
+- [x] 06-01: Set up the capability bootstrap layer and install/adapt the selected external skill sources for Codex.
+- [x] 06-02: Add Codex-native Browser Use, Hermes, and Paper2Code integration surfaces.
+- [x] 06-03: Verify the capability stack and document how to use it from this repo.
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 
 | Phase                  | Plans Complete | Status      | Completed  |
 | ---------------------- | -------------- | ----------- | ---------- |
@@ -140,4 +140,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 | 3. Resume Session Flow | 4/4            | Complete    | 2026-04-05 |
 | 4. Frontend Experience | 3/3            | Complete    | 2026-04-05 |
 | 5. Ship / Polish       | 2/2            | Complete    | 2026-04-05 |
-| 6. Agent Capability Integration | 0/3     | Not Started | —          |
+| 6. Agent Capability Integration | 3/3     | Complete    | 2026-04-05 |
