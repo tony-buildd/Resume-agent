@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import type { StoryCheckpointRecord, VaultRoleRecord } from "@/lib/api/vault";
 import type { SessionEnvelope } from "@/lib/api/sessions";
 
@@ -16,6 +18,7 @@ type WorkspaceShellProps = {
   workspaceMode: "resume" | "vault";
   vaultPrompt: VaultPromptSummary | null;
   vaultCheckpoint: StoryCheckpointRecord | null;
+  preferredArtifactId?: string | null;
 };
 
 const statusStyles: Record<string, string> = {
@@ -31,12 +34,14 @@ export function WorkspaceShell({
   workspaceMode,
   vaultPrompt,
   vaultCheckpoint,
+  preferredArtifactId,
 }: WorkspaceShellProps) {
   const isVaultWorkspace =
     workspaceMode === "vault" || session.stage.key.startsWith("vault_");
   const activeArtifact = selectActiveArtifact(
     session.artifacts,
     session.stage.key,
+    preferredArtifactId,
   );
   const surfaceMode = determineSurfaceMode(session);
   const workspaceSignals = buildWorkspaceSignals(session);
@@ -298,13 +303,18 @@ export function WorkspaceShell({
               .slice()
               .reverse()
               .map((artifact) => (
-                <article
+                <Link
                   key={artifact.id}
+                  href={buildArtifactHref({
+                    sessionId: session.id,
+                    workspaceMode,
+                    artifactId: artifact.id,
+                  })}
                   className={`rounded-[22px] border px-4 py-4 ${
                     artifact.id === activeArtifact?.id
                       ? "border-slate-950 bg-slate-950 text-white"
                       : "border-slate-200 bg-slate-50 text-slate-900"
-                  }`}
+                  } block transition hover:-translate-y-[1px] hover:shadow-[0_16px_30px_-26px_rgba(15,23,42,0.45)]`}
                 >
                   <div className="flex items-center justify-between gap-3">
                     <p className="text-sm font-semibold">{artifact.title}</p>
@@ -336,7 +346,7 @@ export function WorkspaceShell({
                   >
                     {artifact.kind}
                   </p>
-                </article>
+                </Link>
               ))}
           </div>
         </section>
@@ -427,6 +437,22 @@ function buildWorkspaceSignals(session: SessionEnvelope) {
   }
 
   return signals;
+}
+
+function buildArtifactHref({
+  sessionId,
+  workspaceMode,
+  artifactId,
+}: {
+  sessionId: string;
+  workspaceMode: "resume" | "vault";
+  artifactId: string;
+}) {
+  const params = new URLSearchParams({ sessionId, artifactId });
+  if (workspaceMode === "vault") {
+    params.set("mode", "vault");
+  }
+  return `/workspace?${params.toString()}`;
 }
 
 function MetricCard({ label, value }: { label: string; value: string }) {

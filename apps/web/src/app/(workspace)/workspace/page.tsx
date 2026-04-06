@@ -12,6 +12,7 @@ type WorkspacePageProps = {
   searchParams: Promise<{
     mode?: string;
     sessionId?: string;
+    artifactId?: string;
   }>;
 };
 
@@ -32,7 +33,7 @@ type WorkspaceState =
 export default async function WorkspacePage({
   searchParams,
 }: WorkspacePageProps) {
-  const { mode, sessionId } = await searchParams;
+  const { mode, sessionId, artifactId } = await searchParams;
   const workspaceState = await loadWorkspaceState(
     sessionId,
     parseWorkspaceMode(mode),
@@ -67,6 +68,7 @@ export default async function WorkspacePage({
       workspaceMode={workspaceMode}
       vaultPrompt={readVaultPrompt(session.artifacts)}
       vaultCheckpoint={readVaultCheckpoint(session.artifacts)}
+      preferredArtifactId={artifactId ?? null}
     />
   );
 }

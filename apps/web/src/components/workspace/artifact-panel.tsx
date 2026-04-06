@@ -82,7 +82,17 @@ export function ArtifactPanel({
 export function selectActiveArtifact(
   artifacts: RuntimeArtifact[],
   stageKey: StageKey,
+  preferredArtifactId?: string | null,
 ): RuntimeArtifact | null {
+  if (preferredArtifactId) {
+    const explicitArtifact = artifacts.find(
+      (artifact) => artifact.id === preferredArtifactId,
+    );
+    if (explicitArtifact) {
+      return explicitArtifact;
+    }
+  }
+
   const priorities = stageArtifactPriority[stageKey] ?? [];
   for (const kind of priorities) {
     const artifact = [...artifacts]
