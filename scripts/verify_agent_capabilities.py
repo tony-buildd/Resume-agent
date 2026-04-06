@@ -54,6 +54,7 @@ def main() -> None:
     checks.extend(check_skill_paths())
     checks.append(check_command("uv"))
     checks.append(check_command("hermes"))
+    checks.append(check_command("browser-use"))
     checks.append(check_python_module("browser_use"))
     checks.append(check_python_module("pydantic"))
 
