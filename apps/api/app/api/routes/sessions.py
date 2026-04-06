@@ -148,6 +148,8 @@ def advance_existing_session(
         approve_blueprint=payload.approve_blueprint,
         accept_draft_review=payload.accept_draft_review,
         request_revision=payload.request_revision,
+        interruption_type=payload.interruption_type,
+        interruption_note=payload.interruption_note,
     )
     db.commit()
     db.refresh(record)

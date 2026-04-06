@@ -179,11 +179,24 @@ def transition_to(
     *,
     status: StageStatus,
     interrupt_reason: InterruptReason = InterruptReason.NONE,
+    interruption_type: InterruptionType | None = None,
+    replan_from_stage: StageKey | None = None,
+    preserve_replan_context: bool = False,
 ) -> None:
     record.stage = stage.value
     runtime["current_stage"] = stage.value
     runtime["stage_status"] = status.value
     runtime["interrupt_reason"] = interrupt_reason.value
+    if preserve_replan_context:
+        runtime.setdefault("interruption_type", None)
+        runtime.setdefault("replan_from_stage", None)
+    else:
+        runtime["interruption_type"] = (
+            interruption_type.value if interruption_type else None
+        )
+        runtime["replan_from_stage"] = (
+            replan_from_stage.value if replan_from_stage else None
+        )
     runtime["updated_at"] = utc_now().isoformat()
 
     if not runtime["stage_history"] or runtime["stage_history"][-1] != stage.value:
@@ -205,6 +218,7 @@ def interrupt_session(
         stage,
         status=StageStatus.INTERRUPTED,
         interrupt_reason=reason,
+        preserve_replan_context=True,
     )
     record.status = SessionStatus.INTERRUPTED
     append_trace(
@@ -215,6 +229,96 @@ def interrupt_session(
         payload={"interruptReason": reason.value},
     )
     return message
+
+
+def determine_replan_stage(
+    *,
+    current_stage: StageKey,
+    interruption_type: InterruptionType,
+    suggested_stage: StageKey | None = None,
+) -> StageKey:
+    if suggested_stage is not None:
+        return suggested_stage
+
+    if interruption_type in {
+        InterruptionType.ADD_REQUIREMENT,
+        InterruptionType.REVISE_REQUIREMENT,
+        InterruptionType.RETRACT_REQUIREMENT,
+    }:
+        if current_stage in {StageKey.BOOTSTRAP, StageKey.JD_INTAKE}:
+            return StageKey.JD_ANALYSIS_REVIEW
+        return StageKey.BLUEPRINT_REVIEW
+
+    if interruption_type in {
+        InterruptionType.CLARIFY_FACT,
+        InterruptionType.RISK_FLAG,
+    }:
+        if current_stage in {
+            StageKey.BOOTSTRAP,
+            StageKey.JD_INTAKE,
+            StageKey.JD_ANALYSIS_REVIEW,
+        }:
+            return StageKey.CAREER_INTAKE
+        return StageKey.CAREER_INTAKE
+
+    return StageKey.DRAFT_REVIEW
+
+
+def request_runtime_replan(
+    db: Session,
+    record: SessionRecord,
+    runtime: dict[str, Any],
+    *,
+    interruption_type: InterruptionType,
+    note: str | None,
+    source_stage: StageKey,
+    suggested_stage: StageKey | None = None,
+) -> str:
+    replan_target = determine_replan_stage(
+        current_stage=source_stage,
+        interruption_type=interruption_type,
+        suggested_stage=suggested_stage,
+    )
+    record.status = SessionStatus.RUNNING
+    runtime["updated_at"] = utc_now().isoformat()
+
+    upsert_stage_artifact(
+        db,
+        record,
+        stage=replan_target,
+        kind="interruption-request",
+        status=ArtifactStatus.CANONICAL,
+        title=f"Runtime replan: {interruption_type.value}",
+        summary=(
+            "A runtime interruption requested a targeted rerun from the earliest affected stage."
+        ),
+        payload={
+            "sourceStage": source_stage.value,
+            "interruptionType": interruption_type.value,
+            "replanFromStage": replan_target.value,
+            "note": note,
+        },
+    )
+    append_trace(
+        db,
+        record,
+        stage=source_stage,
+        message="Runtime interruption requested a targeted rerun from the earliest affected stage.",
+        payload={
+            "interruptionType": interruption_type.value,
+            "replanFromStage": replan_target.value,
+            "note": note,
+        },
+    )
+    transition_to(
+        record,
+        runtime,
+        replan_target,
+        status=StageStatus.RUNNING,
+        interruption_type=interruption_type,
+        replan_from_stage=replan_target,
+    )
+    return f"{source_stage.value}_to_{replan_target.value}"
 
 
 def mark_blueprint_approved(record: SessionRecord, runtime: dict[str, Any]) -> None:
@@ -545,6 +649,8 @@ def advance_session(
     approve_checkpoint: bool = False,
     accept_draft_review: bool = False,
     request_revision: bool = False,
+    interruption_type: InterruptionType | None = None,
+    interruption_note: str | None = None,
 ) -> AdvanceSessionResponse:
     runtime = ensure_runtime_state(record)
     latest_answer = answer.strip() if answer else None
@@ -565,6 +671,17 @@ def advance_session(
             interrupted=record.status == SessionStatus.INTERRUPTED,
             envelope=build_session_envelope(record),
         )
+
+    if interruption_type is not None:
+        transition_message = request_runtime_replan(
+            db,
+            record,
+            runtime,
+            interruption_type=interruption_type,
+            note=interruption_note or latest_answer,
+            source_stage=StageKey(runtime["current_stage"]),
+        )
+        latest_answer = None
 
     while True:
         stage = StageKey(runtime["current_stage"])
@@ -855,20 +972,15 @@ def advance_session(
                 rerun_target = parse_evaluation_scorecard(runtime).revision_target_stage
                 if rerun_target is StageKey.DRAFT_REVIEW:
                     rerun_target = StageKey.BLUEPRINT_REVIEW
-                append_trace(
+                transition_message = request_runtime_replan(
                     db,
                     record,
-                    stage=stage,
-                    message="Draft review requested a targeted rerun from the earliest affected stage.",
-                    payload={"rerunTarget": rerun_target.value},
-                )
-                transition_to(
-                    record,
                     runtime,
-                    rerun_target,
-                    status=StageStatus.RUNNING,
+                    interruption_type=InterruptionType.REQUEST_REVISION,
+                    note="Draft review requested a targeted rerun.",
+                    source_stage=stage,
+                    suggested_stage=rerun_target,
                 )
-                transition_message = f"draft_review_to_{rerun_target.value}"
                 continue
 
             if not accept_draft_review:
