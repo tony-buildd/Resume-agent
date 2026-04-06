@@ -301,17 +301,44 @@ function DraftPackagePayload({
 }
 
 function ScorecardPayload({ artifact }: { artifact: RuntimeArtifact }) {
-  const metrics = [
-    ["Fit", readObject(artifact.payload.fit)],
-    ["Evidence", readObject(artifact.payload.evidenceSupport)],
-    ["Specificity", readObject(artifact.payload.specificity)],
-    ["Risk", readObject(artifact.payload.overstatementRisk)],
-  ] as const;
+  const rubric = readObject(artifact.payload.rubric);
+  const dimensions = readArray(artifact.payload.dimensions)
+    .map((value: unknown) => readObject(value))
+    .filter((value): value is Record<string, unknown> => Boolean(value));
+  const metrics: Array<[string, Record<string, unknown> | null]> =
+    dimensions.length > 0
+      ? dimensions.map((value) => [
+          readString(value?.label) ?? readString(value?.key) ?? "Dimension",
+          value,
+        ])
+      : ([
+          ["Fit", readObject(artifact.payload.fit)],
+          ["Evidence", readObject(artifact.payload.evidenceSupport)],
+          ["Specificity", readObject(artifact.payload.specificity)],
+          ["Risk", readObject(artifact.payload.overstatementRisk)],
+        ] as const);
 
   return (
     <div className="space-y-4">
+      {rubric ? (
+        <div className="rounded-[20px] border border-slate-200 bg-white px-4 py-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+            Rubric profile
+          </p>
+          <p className="mt-2 text-lg font-semibold text-slate-950">
+            {readString(rubric.profile) ?? "Unknown"}
+          </p>
+          <p className="mt-1 text-sm text-slate-600">
+            {readString(rubric.focus) ?? "No focus summary available."}
+          </p>
+          <p className="mt-3 text-sm leading-6 text-slate-700">
+            {readString(rubric.weightingRationale) ??
+              "No weighting rationale available."}
+          </p>
+        </div>
+      ) : null}
       <div className="grid gap-3 sm:grid-cols-2">
-        {metrics.map(([label, value]) => (
+        {metrics.map(([label, value]: [string, Record<string, unknown> | null]) => (
           <article
             key={label}
             className="rounded-[20px] border border-slate-200 bg-white px-4 py-4"
@@ -328,9 +355,38 @@ function ScorecardPayload({ artifact }: { artifact: RuntimeArtifact }) {
             <p className="mt-2 text-sm leading-6 text-slate-600">
               {readString(value?.rationale) ?? "No rationale available."}
             </p>
+            {value?.weight ? (
+              <p className="mt-2 text-xs font-medium uppercase tracking-[0.14em] text-slate-500">
+                Weight {readNumber(value.weight)?.toFixed(2) ?? "-"}
+              </p>
+            ) : null}
           </article>
         ))}
       </div>
+      {dimensions.length > 0 ? (
+        <div className="rounded-[20px] border border-slate-200 bg-white px-4 py-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+            Evidence highlights
+          </p>
+          <div className="mt-3 grid gap-3">
+            {dimensions.map((value: Record<string, unknown>) => (
+              <div
+                key={readString(value?.key) ?? readString(value?.label) ?? "dimension"}
+                className="rounded-[16px] border border-slate-200 bg-slate-50 px-3 py-3"
+              >
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                  {readString(value?.label) ?? readString(value?.key) ?? "Dimension"}
+                </p>
+                <ul className="mt-2 space-y-1 text-sm leading-6 text-slate-700">
+                  {readArray(value?.evidence).map((entry: unknown, index: number) => (
+                    <li key={`${index}-${String(entry)}`}>• {String(entry)}</li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
       <MetricRow
         label="Revision summary"
         value={
@@ -428,6 +484,10 @@ function readObject(value: unknown): Record<string, unknown> | null {
 
 function readString(value: unknown): string | null {
   return typeof value === "string" ? value : null;
+}
+
+function readArray(value: unknown): unknown[] {
+  return Array.isArray(value) ? value : [];
 }
 
 function readNumber(value: unknown): number | null {

@@ -269,9 +269,41 @@ class TrajectoryEvaluationSummaryRecord(BaseModel):
     notes: list[str] = Field(default_factory=list)
 
 
+class EvaluationDimensionKey(str, Enum):
+    JD_FIT = "jd_fit"
+    EVIDENCE_SUPPORT = "evidence_support"
+    SPECIFICITY = "specificity"
+    OVERSTATEMENT_RISK = "overstatement_risk"
+    QUESTION_QUALITY = "question_quality"
+    EVIDENCE_COVERAGE = "evidence_coverage"
+    ACTION_EFFICIENCY = "action_efficiency"
+    REVISION_EFFICIENCY = "revision_efficiency"
+
+
+class EvaluationRubricDimensionRecord(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    key: EvaluationDimensionKey
+    label: str
+    weight: float
+    emphasis: str
+
+
+class EvaluationRubricRecord(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    profile: str
+    focus: str
+    weighting_rationale: str = Field(alias="weightingRationale")
+    dimensions: list[EvaluationRubricDimensionRecord]
+
+
 class EvaluationDimensionRecord(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
+    key: EvaluationDimensionKey | None = None
+    label: str | None = None
+    weight: float | None = None
     score: int = Field(ge=1, le=5)
     rationale: str
     evidence: list[str]
@@ -280,6 +312,8 @@ class EvaluationDimensionRecord(BaseModel):
 class EvaluationScorecardRecord(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
+    rubric: EvaluationRubricRecord | None = None
+    dimensions: list[EvaluationDimensionRecord] = Field(default_factory=list)
     fit: EvaluationDimensionRecord
     evidence_support: EvaluationDimensionRecord = Field(alias="evidenceSupport")
     specificity: EvaluationDimensionRecord
