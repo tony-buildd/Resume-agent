@@ -5,16 +5,15 @@
 See: .planning/PROJECT.md (updated 2026-04-05)
 
 **Core value:** Turn fragmented career context into a credible, strategically tailored one-page resume that matches a target role without hiding how the system reached its recommendations.
-**Current focus:** Capability milestone complete
+**Current focus:** Runtime hardening milestone kickoff
 
 ## Current Position
 
-Phase: 6 of 6 (Agent Capability Integration)
-Plan: complete
-Status: Complete
-Last activity: 2026-04-05 — Completed Phase 6 capability integration and verification
-
-Progress: [██████████] 100%
+Phase: 7 of 11 (Runtime Hardening and Memory Safety)
+Plan: 07-01
+Status: In Progress
+Last activity: 2026-04-05 — Opened the hardening and evolution milestone and queued Phase 7 execution
+Progress: [█████░░░░░] 55%
 
 ## Performance Metrics
 
@@ -63,18 +62,30 @@ Recent decisions affecting current work:
 - Plan 04-03: Add summary-first trace inspection and accessibility polish so the workspace is ready for verification and shipping
 - Plan 05-01: Document local setup, environment expectations, and day-one contributor onboarding
 - Plan 05-02: Document deployment, release, and the GSD operating model for future maintainers
+- Milestone 2: Preserve the working prototype while hardening runtime safety, retrieval scaling, evaluation depth, research routing, and UX controls
+- Milestone 2: Use Paper2Code-derived architecture ideas only as planning input, not direct code generation
+- Milestone 2: Keep Browser Use as a routed fallback behind internal/API/structured sources
+
+### Roadmap Evolution
+
+- Phase 7 added: Runtime Hardening and Memory Safety
+- Phase 8 added: Hierarchical Retrieval and Context Budgeting
+- Phase 9 added: Adaptive Evaluation and Review Loop
+- Phase 10 added: Capability Routing and Research Orchestration
+- Phase 11 added: Progressive UX and Control Surfaces
 
 ### Pending Todos
 
-- Consider a follow-up milestone if you want deeper tool execution surfaces, more imported skill packs, or production automation around these capabilities.
+- Execute Phase 7 plans in commit-sized slices before moving deeper into retrieval, evaluation, and UX changes.
+- Carry forward the paper-review findings as acceptance checks for Phases 7-10.
 
 ### Blockers/Concerns
 
-- External research docs in `.planning/research/` are bootstrap baselines and should be validated during later implementation
+- Existing APIs and UI surfaces already assume the prototype contract shape, so model/contract changes must remain backward-tolerant during the refactor
 - Capability source repos have overlapping skill names; continue selective adaptation instead of full mirroring
 
 ## Session Continuity
 
-Last session: 2026-04-05 20:02
-Stopped at: Capability milestone complete; next step is either a new milestone or deeper integration follow-up
+Last session: 2026-04-05 23:20
+Stopped at: Hardening milestone opened; next step is Phase 7 schema and runtime refactor
 Resume file: None

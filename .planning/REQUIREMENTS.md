@@ -67,6 +67,41 @@
 - [ ] **CAP-04**: Hermes availability is documented and smoke-tested so the local CLI can be used intentionally rather than implicitly.
 - [ ] **CAP-05**: Paper-to-code workflows are exposed through a Codex-native skill or helper surface instead of remaining an unstructured external repo link.
 
+### Runtime Hardening and Memory Safety
+
+- [ ] **SAFE-01**: Vault records and session flow can distinguish memory tiers (`canonical`, `progress`, `feasibility`, `quarantine`) from user review state.
+- [ ] **SAFE-02**: Vault records persist validation status, contamination risk, quarantine reason, and feasibility checks independently from provenance.
+- [ ] **SAFE-03**: Session runtime accepts explicit interruption intents (`add_requirement`, `revise_requirement`, `retract_requirement`, `clarify_fact`, `risk_flag`).
+- [ ] **SAFE-04**: Replanning targets the earliest affected stage instead of using one generic rerun path.
+- [ ] **SAFE-05**: Quarantined or failed-feasibility evidence can support questioning but cannot become draft-safe input.
+
+### Retrieval and Context Budgeting
+
+- [ ] **RETR-01**: Retrieval shortlists roles, then stories, then supporting evidence instead of ranking only whole roles.
+- [ ] **RETR-02**: Session context assembly respects token budgets for JD constraints, canonical context, selected evidence, and current user answers.
+- [ ] **RETR-03**: Blueprint selection uses configurable evidence budgets rather than only fixed small hard caps.
+- [ ] **RETR-04**: Retrieval artifacts explain what was selected, omitted, or compressed and why.
+
+### Adaptive Evaluation
+
+- [ ] **EVAL-01**: The evaluator generates a role-aware rubric rather than using a fixed keyword scorecard.
+- [ ] **EVAL-02**: Evaluation includes trajectory judgments about question quality, action efficiency, and rerun targeting.
+- [ ] **EVAL-03**: Every evaluation dimension stores explicit evidence so the user can inspect score changes.
+- [ ] **EVAL-04**: Saved sessions can be replayed through offline evaluation fixtures for product QA.
+
+### Capability Routing and Research Orchestration
+
+- [ ] **ROUTE-01**: Research and tool use is driven by an explicit capability registry with scope, trust, latency, auth, and structured-output metadata.
+- [ ] **ROUTE-02**: Research execution prefers internal data, then API/MCP sources, then structured external sources, and only then browser fallback.
+- [ ] **ROUTE-03**: Research stages emit `research-plan`, `source-bundle`, `strategy-synthesis`, and `capability-route` artifacts.
+- [ ] **ROUTE-04**: Browser Use, Hugging Face papers, Hermes, and Paper2Code each have explicit usage boundaries inside the runtime.
+
+### Progressive UX Control Surfaces
+
+- [ ] **UX-04**: The workspace progressively reveals micro-interventions, sidecar review, or full inspection surfaces based on task complexity.
+- [ ] **UX-05**: Users can trigger interruption intents and narrative scope changes directly from the workspace.
+- [ ] **UX-06**: Users can inspect evidence selection, compression, quarantine/risk state, capability route, and evaluator dimension details in the UI.
+
 ## v2 Requirements
 
 ### Collaboration
@@ -127,14 +162,34 @@
 | CAP-03      | Phase 6 | Pending |
 | CAP-04      | Phase 6 | Pending |
 | CAP-05      | Phase 6 | Pending |
+| SAFE-01     | Phase 7 | Pending |
+| SAFE-02     | Phase 7 | Pending |
+| SAFE-03     | Phase 7 | Pending |
+| SAFE-04     | Phase 7 | Pending |
+| SAFE-05     | Phase 7 | Pending |
+| RETR-01     | Phase 8 | Pending |
+| RETR-02     | Phase 8 | Pending |
+| RETR-03     | Phase 8 | Pending |
+| RETR-04     | Phase 8 | Pending |
+| EVAL-01     | Phase 9 | Pending |
+| EVAL-02     | Phase 9 | Pending |
+| EVAL-03     | Phase 9 | Pending |
+| EVAL-04     | Phase 9 | Pending |
+| ROUTE-01    | Phase 10 | Pending |
+| ROUTE-02    | Phase 10 | Pending |
+| ROUTE-03    | Phase 10 | Pending |
+| ROUTE-04    | Phase 10 | Pending |
+| UX-04       | Phase 11 | Pending |
+| UX-05       | Phase 11 | Pending |
+| UX-06       | Phase 11 | Pending |
 
 **Coverage:**
 
-- v1 requirements: 35 total
-- Mapped to phases: 35
+- v1 requirements: 55 total
+- Mapped to phases: 55
 - Unmapped: 0 ✓
 
 ---
 
 _Requirements defined: 2026-04-05_
-_Last updated: 2026-04-05 after adding capability integration requirements_
+_Last updated: 2026-04-05 after adding hardening and evolution requirements_
