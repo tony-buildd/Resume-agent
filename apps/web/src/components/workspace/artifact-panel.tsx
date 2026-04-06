@@ -305,6 +305,10 @@ function ScorecardPayload({ artifact }: { artifact: RuntimeArtifact }) {
   const dimensions = readArray(artifact.payload.dimensions)
     .map((value: unknown) => readObject(value))
     .filter((value): value is Record<string, unknown> => Boolean(value));
+  const trajectoryJudgments = readArray(artifact.payload.trajectoryJudgments)
+    .map((value: unknown) => readObject(value))
+    .filter((value): value is Record<string, unknown> => Boolean(value));
+  const rerunRecommendation = readObject(artifact.payload.rerunRecommendation);
   const metrics: Array<[string, Record<string, unknown> | null]> =
     dimensions.length > 0
       ? dimensions.map((value) => [
@@ -385,6 +389,53 @@ function ScorecardPayload({ artifact }: { artifact: RuntimeArtifact }) {
               </div>
             ))}
           </div>
+        </div>
+      ) : null}
+      {trajectoryJudgments.length > 0 ? (
+        <div className="rounded-[20px] border border-slate-200 bg-white px-4 py-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+            Trajectory judgments
+          </p>
+          <div className="mt-3 grid gap-3 sm:grid-cols-3">
+            {trajectoryJudgments.map((value: Record<string, unknown>) => (
+              <div
+                key={readString(value?.key) ?? readString(value?.label) ?? "trajectory"}
+                className="rounded-[16px] border border-slate-200 bg-slate-50 px-3 py-3"
+              >
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                  {readString(value?.label) ?? readString(value?.key) ?? "Judgment"}
+                </p>
+                <p className="mt-2 text-xl font-semibold text-slate-950">
+                  {readNumber(value?.score) ?? "-"}
+                  <span className="ml-1 text-sm font-medium text-slate-500">
+                    /5
+                  </span>
+                </p>
+                <p className="mt-2 text-sm leading-6 text-slate-700">
+                  {readString(value?.rationale) ?? "No rationale available."}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+      {rerunRecommendation ? (
+        <div className="rounded-[20px] border border-slate-200 bg-white px-4 py-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+            Rerun recommendation
+          </p>
+          <p className="mt-2 text-sm font-semibold text-slate-950">
+            {readString(rerunRecommendation.targetStage) ?? "No rerun target"}
+          </p>
+          <p className="mt-2 text-sm leading-6 text-slate-700">
+            {readString(rerunRecommendation.rationale) ??
+              "No rerun rationale available."}
+          </p>
+          <TagList
+            label="Triggered by"
+            values={readStringArray(rerunRecommendation.triggeredBy)}
+            tone="slate"
+          />
         </div>
       ) : null}
       <MetricRow

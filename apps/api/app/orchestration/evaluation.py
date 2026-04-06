@@ -1,17 +1,22 @@
 from __future__ import annotations
 
 import re
+from collections import Counter
+from typing import Any
 
 from app.orchestration.contracts import (
     EvaluationDimensionKey,
     EvaluationDimensionRecord,
+    EvaluationRerunRecommendationRecord,
     EvaluationRubricDimensionRecord,
     EvaluationRubricRecord,
     EvaluationScorecardRecord,
+    EvaluationTrajectoryJudgmentRecord,
     JDAnalysisRecord,
     NarrativeBlueprintRecord,
     ResumePackageRecord,
     StageKey,
+    TrajectoryEvaluationSummaryRecord,
 )
 
 SYSTEMS_TERMS = {
@@ -49,6 +54,7 @@ def evaluate_resume_package(
     blueprint: NarrativeBlueprintRecord,
     package: ResumePackageRecord,
     analysis: JDAnalysisRecord,
+    runtime: dict[str, Any] | None = None,
 ) -> EvaluationScorecardRecord:
     resume_text = package.markdown_resume.lower()
     bullets = [
@@ -166,10 +172,24 @@ def evaluate_resume_package(
         or specificity_score <= 3
         or overstatement_risk >= 4
     )
+    trajectory_judgments = build_trajectory_judgments(
+        runtime=runtime or {},
+        blueprint=blueprint,
+        package=package,
+        analysis=analysis,
+        revision_target=revision_target,
+    )
+    rerun_recommendation = build_rerun_recommendation(
+        revision_target=revision_target,
+        dimensions=dimensions,
+        trajectory_judgments=trajectory_judgments,
+    )
 
     return EvaluationScorecardRecord(
         rubric=rubric,
         dimensions=dimensions,
+        trajectoryJudgments=trajectory_judgments,
+        rerunRecommendation=rerun_recommendation,
         fit=fit_dimension,
         evidenceSupport=evidence_support_dimension,
         specificity=specificity_dimension,
@@ -293,6 +313,240 @@ def build_emphasis(profile: str, key: EvaluationDimensionKey) -> str:
     }:
         return "High"
     return "Standard"
+
+
+def build_trajectory_judgments(
+    *,
+    runtime: dict[str, Any],
+    blueprint: NarrativeBlueprintRecord,
+    package: ResumePackageRecord,
+    analysis: JDAnalysisRecord,
+    revision_target: StageKey,
+) -> list[EvaluationTrajectoryJudgmentRecord]:
+    stage_history = [
+        StageKey(item)
+        for item in runtime.get("stage_history", [])
+        if item in StageKey._value2member_map_
+    ]
+    canonical_context = runtime.get("canonical_session_context") or {}
+    gap_answers = [
+        value
+        for key, value in canonical_context.items()
+        if key.startswith("gap_") and isinstance(value, dict)
+    ]
+    transitions = runtime.get("transitions") or []
+
+    question_score, question_evidence = score_question_quality(
+        gap_answers=gap_answers,
+        package=package,
+        analysis=analysis,
+    )
+    action_score, action_evidence = score_action_efficiency(
+        stage_history=stage_history,
+        transition_count=len(transitions),
+    )
+    revision_score, revision_evidence = score_revision_efficiency(
+        stage_history=stage_history,
+        runtime=runtime,
+        revision_target=revision_target,
+        blueprint=blueprint,
+    )
+
+    return [
+        EvaluationTrajectoryJudgmentRecord(
+            key=EvaluationDimensionKey.QUESTION_QUALITY,
+            label="Question quality",
+            score=question_score,
+            rationale="Measures whether the system asked a high-leverage question that produced usable evidence.",
+            evidence=question_evidence,
+        ),
+        EvaluationTrajectoryJudgmentRecord(
+            key=EvaluationDimensionKey.ACTION_EFFICIENCY,
+            label="Action efficiency",
+            score=action_score,
+            rationale="Measures whether the session reached a draft with minimal stage churn.",
+            evidence=action_evidence,
+        ),
+        EvaluationTrajectoryJudgmentRecord(
+            key=EvaluationDimensionKey.REVISION_EFFICIENCY,
+            label="Revision efficiency",
+            score=revision_score,
+            rationale="Measures whether revisions or reruns target the earliest correct stage without unnecessary resets.",
+            evidence=revision_evidence,
+        ),
+    ]
+
+
+def score_question_quality(
+    *,
+    gap_answers: list[dict[str, Any]],
+    package: ResumePackageRecord,
+    analysis: JDAnalysisRecord,
+) -> tuple[int, list[str]]:
+    if not gap_answers:
+        return 2, ["No approved gap-answer evidence was available when the draft was evaluated."]
+
+    answer_lengths = [
+        len(str(item.get("answer", "")).split())
+        for item in gap_answers
+        if item.get("answer")
+    ]
+    target_hits = 0
+    resume_text = package.markdown_resume.lower()
+    for item in gap_answers:
+        requirement = str(item.get("targetRequirement", ""))
+        if requirement and any(token in resume_text for token in tokenize(requirement)):
+            target_hits += 1
+
+    average_length = sum(answer_lengths) / max(len(answer_lengths), 1)
+    coverage_ratio = target_hits / max(len(gap_answers), 1)
+    score = 3
+    if average_length >= 18 and coverage_ratio >= 0.6:
+        score = 5
+    elif average_length >= 10 and coverage_ratio >= 0.4:
+        score = 4
+    elif average_length < 6 or coverage_ratio == 0:
+        score = 2
+
+    evidence = [
+        f"{len(gap_answers)} gap-answer blocks were available to the evaluator.",
+        f"Average answer depth was {round(average_length)} words.",
+        f"{target_hits} answers map back into the final draft or top requirements.",
+        f"Primary focus remained {analysis.primary_focus}.",
+    ]
+    return score, evidence
+
+
+def score_action_efficiency(
+    *,
+    stage_history: list[StageKey],
+    transition_count: int,
+) -> tuple[int, list[str]]:
+    unique_stage_count = len(stage_history)
+    repeated_stage_count = max(0, unique_stage_count - len(set(stage_history)))
+    score = 5
+    if unique_stage_count >= 9 or repeated_stage_count >= 3:
+        score = 2
+    elif unique_stage_count >= 7 or repeated_stage_count >= 2:
+        score = 3
+    elif unique_stage_count >= 6 or repeated_stage_count >= 1:
+        score = 4
+
+    evidence = [
+        f"Stage history length: {unique_stage_count}.",
+        f"Repeated stage entries: {repeated_stage_count}.",
+        f"Recorded transition count: {transition_count}.",
+    ]
+    return score, evidence
+
+
+def score_revision_efficiency(
+    *,
+    stage_history: list[StageKey],
+    runtime: dict[str, Any],
+    revision_target: StageKey,
+    blueprint: NarrativeBlueprintRecord,
+) -> tuple[int, list[str]]:
+    counts = Counter(stage_history)
+    repeated_review_stages = sum(
+        max(counts[stage] - 1, 0)
+        for stage in (
+            StageKey.CAREER_INTAKE,
+            StageKey.BLUEPRINT_REVIEW,
+            StageKey.DRAFT_REVIEW,
+        )
+    )
+    replan_stage = runtime.get("replan_from_stage")
+    interruption_type = runtime.get("interruption_type")
+    selected_roles = len(blueprint.selected_roles)
+
+    score = 4
+    if repeated_review_stages >= 3:
+        score = 2
+    elif repeated_review_stages >= 2:
+        score = 3
+    elif replan_stage and replan_stage == revision_target.value:
+        score = 5
+
+    evidence = [
+        f"Recommended rerun stage is {revision_target.value}.",
+        f"Repeated review-stage passes: {repeated_review_stages}.",
+        f"Current replan marker: {replan_stage or 'none'}.",
+        f"Current interruption marker: {interruption_type or 'none'}.",
+        f"Blueprint currently selects {selected_roles} roles.",
+    ]
+    return score, evidence
+
+
+def build_rerun_recommendation(
+    *,
+    revision_target: StageKey,
+    dimensions: list[EvaluationDimensionRecord],
+    trajectory_judgments: list[EvaluationTrajectoryJudgmentRecord],
+) -> EvaluationRerunRecommendationRecord:
+    weakest_dimensions = sorted(
+        dimensions,
+        key=lambda item: (
+            item.score if item.key is not EvaluationDimensionKey.OVERSTATEMENT_RISK else 6 - item.score,
+            -(item.weight or 1.0),
+        ),
+    )[:2]
+    weakest_trajectory = sorted(
+        trajectory_judgments,
+        key=lambda item: item.score,
+    )[:1]
+    triggered_by = [
+        *(item.label for item in weakest_dimensions),
+        *(item.label for item in weakest_trajectory),
+    ]
+    confidence = "high" if len(triggered_by) >= 2 else "medium"
+    rationale = (
+        "The rerun should begin at {stage} because the weakest scoring dimensions are {triggers}."
+    ).format(
+        stage=revision_target.value,
+        triggers=", ".join(triggered_by) or "the current draft constraints",
+    )
+    return EvaluationRerunRecommendationRecord(
+        targetStage=revision_target,
+        rationale=rationale,
+        triggeredBy=triggered_by,
+        confidence=confidence,
+    )
+
+
+def build_trajectory_summary(
+    scorecard: EvaluationScorecardRecord,
+) -> TrajectoryEvaluationSummaryRecord:
+    judgments = {item.key: item for item in scorecard.trajectory_judgments}
+    notes = [item.rationale for item in scorecard.trajectory_judgments]
+    if scorecard.rerun_recommendation is not None:
+        notes.append(scorecard.rerun_recommendation.rationale)
+    return TrajectoryEvaluationSummaryRecord(
+        questionQuality=describe_trajectory_band(
+            judgments.get(EvaluationDimensionKey.QUESTION_QUALITY),
+        ),
+        actionEfficiency=describe_trajectory_band(
+            judgments.get(EvaluationDimensionKey.ACTION_EFFICIENCY),
+        ),
+        revisionEfficiency=describe_trajectory_band(
+            judgments.get(EvaluationDimensionKey.REVISION_EFFICIENCY),
+        ),
+        notes=notes,
+    )
+
+
+def describe_trajectory_band(
+    judgment: EvaluationTrajectoryJudgmentRecord | None,
+) -> str | None:
+    if judgment is None:
+        return None
+    if judgment.score >= 5:
+        return "Strong"
+    if judgment.score == 4:
+        return "Stable"
+    if judgment.score == 3:
+        return "Mixed"
+    return "Needs work"
 
 
 def calculate_weighted_overall_score(

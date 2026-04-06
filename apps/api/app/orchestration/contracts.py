@@ -309,11 +309,38 @@ class EvaluationDimensionRecord(BaseModel):
     evidence: list[str]
 
 
+class EvaluationTrajectoryJudgmentRecord(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    key: EvaluationDimensionKey
+    label: str
+    score: int = Field(ge=1, le=5)
+    rationale: str
+    evidence: list[str]
+
+
+class EvaluationRerunRecommendationRecord(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    target_stage: StageKey = Field(alias="targetStage")
+    rationale: str
+    triggered_by: list[str] = Field(alias="triggeredBy")
+    confidence: str
+
+
 class EvaluationScorecardRecord(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     rubric: EvaluationRubricRecord | None = None
     dimensions: list[EvaluationDimensionRecord] = Field(default_factory=list)
+    trajectory_judgments: list[EvaluationTrajectoryJudgmentRecord] = Field(
+        default_factory=list,
+        alias="trajectoryJudgments",
+    )
+    rerun_recommendation: EvaluationRerunRecommendationRecord | None = Field(
+        default=None,
+        alias="rerunRecommendation",
+    )
     fit: EvaluationDimensionRecord
     evidence_support: EvaluationDimensionRecord = Field(alias="evidenceSupport")
     specificity: EvaluationDimensionRecord

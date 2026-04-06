@@ -38,7 +38,10 @@ from app.orchestration.contracts import (
     TrajectoryEvaluationSummaryRecord,
 )
 from app.orchestration.drafting import build_resume_package
-from app.orchestration.evaluation import evaluate_resume_package
+from app.orchestration.evaluation import (
+    build_trajectory_summary,
+    evaluate_resume_package,
+)
 from app.orchestration.interrogation import (
     build_canonical_session_context,
     build_interrogation_prompt,
@@ -1064,8 +1067,12 @@ def advance_session(
                 blueprint=blueprint,
                 package=package_record,
                 analysis=parse_jd_analysis(runtime),
+                runtime=runtime,
             )
             runtime["evaluation_scorecard"] = serialize_model_payload(scorecard_record)
+            runtime["trajectory_evaluation_summary"] = serialize_model_payload(
+                build_trajectory_summary(scorecard_record)
+            )
             scorecard_artifact = upsert_stage_artifact(
                 db,
                 record,
@@ -1073,12 +1080,15 @@ def advance_session(
                 kind="evaluation-scorecard",
                 status=ArtifactStatus.CANDIDATE,
                 title="Draft evaluation scorecard",
-                summary="Fit, evidence support, specificity, and overstatement risk for the current draft package.",
+                summary="Adaptive rubric scores the draft outcome plus trajectory quality and rerun guidance.",
                 payload=runtime["evaluation_scorecard"],
             )
             runtime["evaluation_artifact_id"] = scorecard_artifact.id
             if request_revision:
-                rerun_target = parse_evaluation_scorecard(runtime).revision_target_stage
+                parsed_scorecard = parse_evaluation_scorecard(runtime)
+                rerun_target = parsed_scorecard.revision_target_stage
+                if parsed_scorecard.rerun_recommendation is not None:
+                    rerun_target = parsed_scorecard.rerun_recommendation.target_stage
                 if rerun_target is StageKey.DRAFT_REVIEW:
                     rerun_target = StageKey.BLUEPRINT_REVIEW
                 transition_message = request_runtime_replan(
