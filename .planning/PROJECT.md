@@ -19,6 +19,7 @@ Turn fragmented career context into a credible, strategically tailored one-page 
 - [ ] Bootstrap a GSD-native project workflow that keeps planning, execution, and verification artifacts in sync.
 - [ ] Build a persistent career vault that stores structured facts, provenance, and many reusable bullet candidates per experience.
 - [ ] Build a visible JD-to-resume orchestration flow with approvals, traces, scorecards, and targeted revision loops.
+- [ ] Add a Codex-native capability layer that can reuse external skill ecosystems and agent tooling without breaking the repo's local workflow.
 
 ### Out of Scope
 
@@ -37,6 +38,7 @@ The current product direction is:
 - `Clerk` authentication for individual users
 - `Postgres + ChromaDB` memory architecture
 - Visible traces, approvals, scorecards, and research summaries
+- Repo-local `.agents/skills` and capability bootstrap scripts for Codex-oriented integrations
 
 ## Constraints
 
@@ -56,6 +58,7 @@ The current product direction is:
 | Keep top-level agents behind strict typed stage contracts | The product should teach controllable agent systems, not opaque agent swarms                        | — Pending |
 | Use GSD as the default project OS                         | The user wants phase-by-phase planning, execution, verification, and explicit skill usage           | — Pending |
 | Perform a skill audit at the start of each phase          | The project should deliberately use relevant GSD and non-GSD skills without forcing irrelevant ones | — Pending |
+| Integrate external agent ecosystems through Codex-native wrappers | External repos vary in format, so Codex should consume them through stable local skills and scripts | — Pending |
 
 ## Evolution
 
@@ -78,4 +81,4 @@ This document evolves at phase transitions and milestone boundaries.
 
 ---
 
-_Last updated: 2026-04-05 after initialization_
+_Last updated: 2026-04-05 after capability integration milestone kickoff_

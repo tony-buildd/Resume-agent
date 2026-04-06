@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-04-05)
 
 **Core value:** Turn fragmented career context into a credible, strategically tailored one-page resume that matches a target role without hiding how the system reached its recommendations.
-**Current focus:** Milestone complete
+**Current focus:** Phase 6 planning and capability integration
 
 ## Current Position
 
-Phase: 5 of 5 (Ship / Polish)
-Plan: complete
-Status: Complete
-Last activity: 2026-04-05 — Completed Phase 5 and closed the current milestone
+Phase: 6 of 6 (Agent Capability Integration)
+Plan: 06-01
+Status: In Progress
+Last activity: 2026-04-05 — Opened a new capability integration milestone and planned Phase 6
 
-Progress: [██████████] 100%
+Progress: [████████░░] 83%
 
 ## Performance Metrics
 
@@ -66,15 +66,15 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-- Consider a next milestone for CI/CD automation and a concrete production deployment target once hosting is locked.
+- Phase 6 execution: integrate external skill ecosystems and local agent tooling into a Codex-native capability layer.
 
 ### Blockers/Concerns
 
 - External research docs in `.planning/research/` are bootstrap baselines and should be validated during later implementation
-- No active blockers; current roadmap is complete
+- Capability source repos have overlapping skill names; selective adaptation is required to avoid collisions
 
 ## Session Continuity
 
-Last session: 2026-04-05 14:09
-Stopped at: Current milestone complete; next step would be a new milestone or shipping workflow
+Last session: 2026-04-05 19:05
+Stopped at: Phase 6 planning complete; next step is executing plan 06-01
 Resume file: None

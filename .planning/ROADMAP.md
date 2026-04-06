@@ -11,11 +11,12 @@ This roadmap builds Resume Agent from project skeleton to a production-ready MVP
 - Integer phases (1, 2, 3): Planned milestone work
 - Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
 
-- [ ] **Phase 1: Foundations** - Set up the repo, runtime split, auth, data plumbing, orchestration shell, and trace/event model.
+- [x] **Phase 1: Foundations** - Set up the repo, runtime split, auth, data plumbing, orchestration shell, and trace/event model.
 - [x] **Phase 2: Career Vault** - Build the persistent memory layer for roles, stories, facts, provenance, and reusable bullet candidates.
 - [x] **Phase 3: Resume Session Flow** - Implement JD analysis, research, interrogation, blueprint approval, drafting, and evaluator-driven revision loops.
 - [x] **Phase 4: Frontend Experience** - Build the chat-first workspace with contextual panels, inline approvals, diffs, and trace views.
 - [x] **Phase 5: Ship / Polish** - Harden operations, documentation, onboarding, and release packaging for a usable MVP.
+- [ ] **Phase 6: Agent Capability Integration** - Add Codex-native wrappers, bootstrap scripts, and docs for external skill ecosystems and agent tooling.
 
 ## Phase Details
 
@@ -109,6 +110,24 @@ Plans:
 - [x] 05-01: Document local setup, env management, and developer onboarding.
 - [x] 05-02: Add deployment/release hardening and project operating docs.
 
+### Phase 6: Agent Capability Integration
+
+**Goal**: Make external agent ecosystems and tools usable from this repo through stable Codex-native skills, scripts, and verification docs.
+**Depends on**: Phase 5
+**Requirements**: CAP-01, CAP-02, CAP-03, CAP-04, CAP-05
+**Success Criteria** (what must be TRUE):
+
+1. Repo-local `.agents/skills` includes Codex-usable wrappers or installed skills for the chosen external capability sources.
+2. Developers can run one documented bootstrap flow to set up those capabilities and understand what is installed directly vs wrapped locally.
+3. Browser Use, Hermes, and Paper2Code each have an intentional entry point in this repo rather than existing as disconnected external references.
+   **Plans**: 3 plans
+
+Plans:
+
+- [ ] 06-01: Set up the capability bootstrap layer and install/adapt the selected external skill sources for Codex.
+- [ ] 06-02: Add Codex-native Browser Use, Hermes, and Paper2Code integration surfaces.
+- [ ] 06-03: Verify the capability stack and document how to use it from this repo.
+
 ## Progress
 
 **Execution Order:**
@@ -121,3 +140,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 | 3. Resume Session Flow | 4/4            | Complete    | 2026-04-05 |
 | 4. Frontend Experience | 3/3            | Complete    | 2026-04-05 |
 | 5. Ship / Polish       | 2/2            | Complete    | 2026-04-05 |
+| 6. Agent Capability Integration | 0/3     | Not Started | —          |

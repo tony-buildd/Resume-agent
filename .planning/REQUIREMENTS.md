@@ -59,6 +59,14 @@
 - [ ] **OPS-02**: The project has deployment-ready environment and release scaffolding for the web app and backend.
 - [ ] **OPS-03**: The repo documents the GSD-native workflow and expected project operating model.
 
+### Agent Capability Integration
+
+- [ ] **CAP-01**: Codex can discover repo-local skills that wrap external capability sources relevant to this project.
+- [ ] **CAP-02**: The repo provides a reproducible bootstrap path for Codex-compatible external skills and tools without requiring ad hoc manual copying.
+- [ ] **CAP-03**: Browser Use guidance is available as a Codex-native skill with the project's preferred conventions (`uv`, Pydantic v2, pre-commit, ChatBrowserUse default).
+- [ ] **CAP-04**: Hermes availability is documented and smoke-tested so the local CLI can be used intentionally rather than implicitly.
+- [ ] **CAP-05**: Paper-to-code workflows are exposed through a Codex-native skill or helper surface instead of remaining an unstructured external repo link.
+
 ## v2 Requirements
 
 ### Collaboration
@@ -114,14 +122,19 @@
 | OPS-01      | Phase 5 | Pending |
 | OPS-02      | Phase 5 | Pending |
 | OPS-03      | Phase 5 | Pending |
+| CAP-01      | Phase 6 | Pending |
+| CAP-02      | Phase 6 | Pending |
+| CAP-03      | Phase 6 | Pending |
+| CAP-04      | Phase 6 | Pending |
+| CAP-05      | Phase 6 | Pending |
 
 **Coverage:**
 
-- v1 requirements: 30 total
-- Mapped to phases: 30
+- v1 requirements: 35 total
+- Mapped to phases: 35
 - Unmapped: 0 ✓
 
 ---
 
 _Requirements defined: 2026-04-05_
-_Last updated: 2026-04-05 after initial definition_
+_Last updated: 2026-04-05 after adding capability integration requirements_
