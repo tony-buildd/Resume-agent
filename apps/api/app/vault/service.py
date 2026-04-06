@@ -22,6 +22,7 @@ from app.vault.contracts import (
     VaultProjectStoryRecord,
     VaultRoleRecord,
 )
+from app.vault.safety import hydrate_role_safety
 
 
 def create_vault_role_tree(
@@ -92,6 +93,7 @@ def create_vault_role_tree(
             )
 
     db.add(company)
+    hydrate_role_safety(role, company_name=company.name)
     db.flush()
     return role
 
@@ -120,6 +122,7 @@ def base_vault_role_query() -> Select[VaultRole]:
 
 
 def serialize_vault_role(record: VaultRole) -> VaultRoleRecord:
+    hydrate_role_safety(record, company_name=record.company.name)
     role_level_facts = [item for item in record.facts if item.project_story_id is None]
     role_level_bullets = [
         item for item in record.bullet_candidates if item.project_story_id is None

@@ -45,7 +45,12 @@ from app.orchestration.interrogation import (
 from app.orchestration.research import generate_jd_analysis_bundle
 from app.vault.contracts import GuidedRoleCaptureRequest, StoryCheckpointRecord
 from app.vault.ingestion import build_guided_capture_request, extract_statements
-from app.vault.service import create_vault_role_tree, serialize_vault_role
+from app.vault.safety import summarize_memory_risks
+from app.vault.service import (
+    create_vault_role_tree,
+    list_vault_roles,
+    serialize_vault_role,
+)
 
 STAGE_LABELS: dict[StageKey, str] = {
     StageKey.BOOTSTRAP: "Bootstrap",
@@ -87,6 +92,7 @@ def ensure_runtime_state(record: SessionRecord) -> dict[str, Any]:
     runtime.setdefault("draft_package_artifact_id", None)
     runtime.setdefault("evaluation_artifact_id", None)
     runtime.setdefault("flow", "resume_session")
+    runtime.setdefault("last_memory_risk_signature", None)
     runtime.setdefault("updated_at", utc_now().isoformat())
     snapshot["runtime"] = runtime
     record.state_snapshot = snapshot
@@ -399,6 +405,45 @@ def mark_vault_checkpoint_approved(
 
 def serialize_model_payload(model: BaseModel) -> dict[str, Any]:
     return model.model_dump(by_alias=True, mode="json")
+
+
+def refresh_memory_risk_summary(
+    db: Session,
+    record: SessionRecord,
+    runtime: dict[str, Any],
+    *,
+    stage: StageKey,
+) -> dict[str, Any]:
+    roles = [serialize_vault_role(item) for item in list_vault_roles(db, user=record.user)]
+    summary = summarize_memory_risks(roles)
+    runtime["memory_risk_summary"] = summary
+
+    signature = (
+        f"{summary['quarantinedItems']}:"
+        f"{summary['highRiskItems']}:"
+        f"{summary['failedFeasibilityItems']}"
+    )
+    upsert_stage_artifact(
+        db,
+        record,
+        stage=stage,
+        kind="memory-risk-summary",
+        status=ArtifactStatus.CANONICAL,
+        title="Memory risk summary",
+        summary="Current quarantine and feasibility state across vault evidence.",
+        payload={"summary": summary},
+    )
+    if summary["notes"] and runtime.get("last_memory_risk_signature") != signature:
+        runtime["last_memory_risk_signature"] = signature
+        append_trace(
+            db,
+            record,
+            stage=stage,
+            message="Memory safety summary updated with questioning-only evidence counts.",
+            payload=summary,
+            level=EventLevel.WARNING,
+        )
+    return summary
 
 
 def parse_jd_analysis(runtime: dict[str, Any]) -> JDAnalysisRecord:
@@ -806,6 +851,12 @@ def advance_session(
             continue
 
         if stage is StageKey.CAREER_INTAKE:
+            refresh_memory_risk_summary(
+                db,
+                record,
+                runtime,
+                stage=stage,
+            )
             jd_analysis = parse_jd_analysis(runtime)
             research_summary = parse_research_summary(runtime)
             interrogation_prompt = build_interrogation_prompt(
@@ -879,6 +930,12 @@ def advance_session(
             continue
 
         if stage is StageKey.BLUEPRINT_REVIEW:
+            refresh_memory_risk_summary(
+                db,
+                record,
+                runtime,
+                stage=stage,
+            )
             jd_analysis = parse_jd_analysis(runtime)
             research_summary = parse_research_summary(runtime)
             blueprint_record = build_narrative_blueprint(

@@ -4,7 +4,7 @@ from collections.abc import Iterable
 
 from sqlalchemy.orm import Session
 
-from app.db.models import AppUser, VaultReviewState
+from app.db.models import AppUser
 from app.vault.contracts import (
     VaultBulletCandidateRecord,
     VaultFactRecord,
@@ -14,18 +14,8 @@ from app.vault.contracts import (
     VaultSemanticMatchRecord,
 )
 from app.vault.indexing import VaultIndexer
+from app.vault.safety import is_draft_safe, is_questioning_safe
 from app.vault.service import list_vault_roles, serialize_vault_role
-
-DRAFT_SAFE_REVIEW_STATES = {
-    VaultReviewState.USER_STATED,
-    VaultReviewState.APPROVED,
-}
-QUESTIONING_SAFE_REVIEW_STATES = {
-    VaultReviewState.USER_STATED,
-    VaultReviewState.APPROVED,
-    VaultReviewState.INFERRED,
-}
-
 
 def retrieve_vault_context(
     db: Session,
@@ -42,16 +32,16 @@ def retrieve_vault_context(
     draft_safe_roles = filter_none(
         filter_role(
             role,
-            allowed_review_states=DRAFT_SAFE_REVIEW_STATES,
             require_draft_eligible=True,
+            safety_mode="draft",
         )
         for role in ranked_roles
     )
     questioning_safe_roles = filter_none(
         filter_role(
             role,
-            allowed_review_states=QUESTIONING_SAFE_REVIEW_STATES,
             require_draft_eligible=False,
+            safety_mode="questioning",
         )
         for role in ranked_roles
     )
@@ -80,31 +70,31 @@ def retrieve_vault_context(
 def filter_role(
     role: VaultRoleRecord,
     *,
-    allowed_review_states: set[VaultReviewState],
     require_draft_eligible: bool,
+    safety_mode: str,
 ) -> VaultRoleRecord | None:
     role_facts = filter_facts(
         role.role_facts,
-        allowed_review_states=allowed_review_states,
         require_draft_eligible=require_draft_eligible,
+        safety_mode=safety_mode,
     )
     role_bullets = filter_bullets(
         role.role_bullet_candidates,
-        allowed_review_states=allowed_review_states,
         require_draft_eligible=require_draft_eligible,
+        safety_mode=safety_mode,
     )
 
     project_stories: list[VaultProjectStoryRecord] = []
     for story in role.project_stories:
         story_facts = filter_facts(
             story.facts,
-            allowed_review_states=allowed_review_states,
             require_draft_eligible=require_draft_eligible,
+            safety_mode=safety_mode,
         )
         story_bullets = filter_bullets(
             story.bullet_candidates,
-            allowed_review_states=allowed_review_states,
             require_draft_eligible=require_draft_eligible,
+            safety_mode=safety_mode,
         )
         if not story_facts and not story_bullets:
             continue
@@ -133,13 +123,17 @@ def filter_role(
 def filter_facts(
     facts: Iterable[VaultFactRecord],
     *,
-    allowed_review_states: set[VaultReviewState],
     require_draft_eligible: bool,
+    safety_mode: str,
 ) -> list[VaultFactRecord]:
     return [
         fact
         for fact in facts
-        if fact.review_state in allowed_review_states
+        if (
+            is_draft_safe(fact)
+            if safety_mode == "draft"
+            else is_questioning_safe(fact)
+        )
         and (fact.draft_eligible or not require_draft_eligible)
     ]
 
@@ -147,13 +141,17 @@ def filter_facts(
 def filter_bullets(
     bullets: Iterable[VaultBulletCandidateRecord],
     *,
-    allowed_review_states: set[VaultReviewState],
     require_draft_eligible: bool,
+    safety_mode: str,
 ) -> list[VaultBulletCandidateRecord]:
     return [
         bullet
         for bullet in bullets
-        if bullet.review_state in allowed_review_states
+        if (
+            is_draft_safe(bullet)
+            if safety_mode == "draft"
+            else is_questioning_safe(bullet)
+        )
         and (bullet.draft_eligible or not require_draft_eligible)
     ]
 
