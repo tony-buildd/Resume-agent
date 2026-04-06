@@ -38,6 +38,15 @@ class InterruptReason(str, Enum):
     NONE = "none"
 
 
+class InterruptionType(str, Enum):
+    ADD_REQUIREMENT = "add_requirement"
+    REVISE_REQUIREMENT = "revise_requirement"
+    RETRACT_REQUIREMENT = "retract_requirement"
+    CLARIFY_FACT = "clarify_fact"
+    RISK_FLAG = "risk_flag"
+    REQUEST_REVISION = "request_revision"
+
+
 class RuntimeStage(BaseModel):
     key: StageKey
     label: str
@@ -78,6 +87,27 @@ class SessionEnvelope(BaseModel):
     status: str
     stage: RuntimeStage
     stage_history: list[StageKey] = Field(alias="stageHistory")
+    interruption_type: InterruptionType | None = Field(
+        default=None,
+        alias="interruptionType",
+    )
+    replan_from_stage: StageKey | None = Field(default=None, alias="replanFromStage")
+    memory_risk_summary: "MemoryRiskSummaryRecord | None" = Field(
+        default=None,
+        alias="memoryRiskSummary",
+    )
+    context_budget_summary: "ContextBudgetSummaryRecord | None" = Field(
+        default=None,
+        alias="contextBudgetSummary",
+    )
+    capability_route_summary: "CapabilityRouteSummaryRecord | None" = Field(
+        default=None,
+        alias="capabilityRouteSummary",
+    )
+    trajectory_evaluation_summary: "TrajectoryEvaluationSummaryRecord | None" = Field(
+        default=None,
+        alias="trajectoryEvaluationSummary",
+    )
     artifact_count: int = Field(alias="artifactCount")
     trace_event_count: int = Field(alias="traceEventCount")
     artifacts: list[RuntimeArtifact]
@@ -202,6 +232,43 @@ class ResumePackageRecord(BaseModel):
     )
 
 
+class MemoryRiskSummaryRecord(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    quarantined_items: int = Field(default=0, alias="quarantinedItems")
+    high_risk_items: int = Field(default=0, alias="highRiskItems")
+    failed_feasibility_items: int = Field(default=0, alias="failedFeasibilityItems")
+    notes: list[str] = Field(default_factory=list)
+
+
+class ContextBudgetSummaryRecord(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    token_budget: int = Field(default=0, alias="tokenBudget")
+    reserved_budget: int = Field(default=0, alias="reservedBudget")
+    compressed: bool = False
+    notes: list[str] = Field(default_factory=list)
+
+
+class CapabilityRouteSummaryRecord(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    selected_capability: str | None = Field(default=None, alias="selectedCapability")
+    source_type: str | None = Field(default=None, alias="sourceType")
+    fallback_used: bool = Field(default=False, alias="fallbackUsed")
+    confidence: str | None = None
+    notes: list[str] = Field(default_factory=list)
+
+
+class TrajectoryEvaluationSummaryRecord(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    question_quality: str | None = Field(default=None, alias="questionQuality")
+    action_efficiency: str | None = Field(default=None, alias="actionEfficiency")
+    revision_efficiency: str | None = Field(default=None, alias="revisionEfficiency")
+    notes: list[str] = Field(default_factory=list)
+
+
 class EvaluationDimensionRecord(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
@@ -230,6 +297,11 @@ class AdvanceSessionRequest(BaseModel):
     approve_checkpoint: bool = Field(default=False, alias="approveCheckpoint")
     accept_draft_review: bool = Field(default=False, alias="acceptDraftReview")
     request_revision: bool = Field(default=False, alias="requestRevision")
+    interruption_type: InterruptionType | None = Field(
+        default=None,
+        alias="interruptionType",
+    )
+    interruption_note: str | None = Field(default=None, alias="interruptionNote")
 
 
 class AdvanceSessionResponse(BaseModel):

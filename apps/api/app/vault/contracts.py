@@ -4,7 +4,14 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.db.models import VaultReviewState, VaultSourceType
+from app.db.models import (
+    VaultContaminationRisk,
+    VaultMemoryTier,
+    VaultQuarantineReason,
+    VaultReviewState,
+    VaultSourceType,
+    VaultValidationStatus,
+)
 
 
 class VaultFactInput(BaseModel):
@@ -14,6 +21,26 @@ class VaultFactInput(BaseModel):
     evidence: str | None = None
     source_type: VaultSourceType = Field(alias="sourceType")
     review_state: VaultReviewState = Field(alias="reviewState")
+    memory_tier: VaultMemoryTier = Field(
+        default=VaultMemoryTier.CANONICAL,
+        alias="memoryTier",
+    )
+    validation_status: VaultValidationStatus = Field(
+        default=VaultValidationStatus.UNCHECKED,
+        alias="validationStatus",
+    )
+    contamination_risk: VaultContaminationRisk = Field(
+        default=VaultContaminationRisk.LOW,
+        alias="contaminationRisk",
+    )
+    quarantine_reason: VaultQuarantineReason = Field(
+        default=VaultQuarantineReason.NONE,
+        alias="quarantineReason",
+    )
+    feasibility_checks: dict[str, object] = Field(
+        default_factory=dict,
+        alias="feasibilityChecks",
+    )
     draft_eligible: bool = Field(alias="draftEligible")
     details: dict[str, object] = Field(default_factory=dict)
 
@@ -23,6 +50,26 @@ class VaultBulletCandidateInput(BaseModel):
     story_angle: str | None = Field(default=None, alias="storyAngle")
     source_type: VaultSourceType = Field(alias="sourceType")
     review_state: VaultReviewState = Field(alias="reviewState")
+    memory_tier: VaultMemoryTier = Field(
+        default=VaultMemoryTier.CANONICAL,
+        alias="memoryTier",
+    )
+    validation_status: VaultValidationStatus = Field(
+        default=VaultValidationStatus.UNCHECKED,
+        alias="validationStatus",
+    )
+    contamination_risk: VaultContaminationRisk = Field(
+        default=VaultContaminationRisk.LOW,
+        alias="contaminationRisk",
+    )
+    quarantine_reason: VaultQuarantineReason = Field(
+        default=VaultQuarantineReason.NONE,
+        alias="quarantineReason",
+    )
+    feasibility_checks: dict[str, object] = Field(
+        default_factory=dict,
+        alias="feasibilityChecks",
+    )
     draft_eligible: bool = Field(alias="draftEligible")
     supporting_fact_client_keys: list[str] = Field(
         default_factory=list,
@@ -39,6 +86,26 @@ class VaultProjectStoryInput(BaseModel):
     impact_summary: str | None = Field(default=None, alias="impactSummary")
     source_type: VaultSourceType = Field(alias="sourceType")
     review_state: VaultReviewState = Field(alias="reviewState")
+    memory_tier: VaultMemoryTier = Field(
+        default=VaultMemoryTier.CANONICAL,
+        alias="memoryTier",
+    )
+    validation_status: VaultValidationStatus = Field(
+        default=VaultValidationStatus.UNCHECKED,
+        alias="validationStatus",
+    )
+    contamination_risk: VaultContaminationRisk = Field(
+        default=VaultContaminationRisk.LOW,
+        alias="contaminationRisk",
+    )
+    quarantine_reason: VaultQuarantineReason = Field(
+        default=VaultQuarantineReason.NONE,
+        alias="quarantineReason",
+    )
+    feasibility_checks: dict[str, object] = Field(
+        default_factory=dict,
+        alias="feasibilityChecks",
+    )
     draft_eligible: bool = Field(alias="draftEligible")
     details: dict[str, object] = Field(default_factory=dict)
     facts: list[VaultFactInput] = Field(default_factory=list)
@@ -79,6 +146,11 @@ class VaultFactRecord(BaseModel):
     evidence: str | None = None
     source_type: VaultSourceType = Field(alias="sourceType")
     review_state: VaultReviewState = Field(alias="reviewState")
+    memory_tier: VaultMemoryTier = Field(alias="memoryTier")
+    validation_status: VaultValidationStatus = Field(alias="validationStatus")
+    contamination_risk: VaultContaminationRisk = Field(alias="contaminationRisk")
+    quarantine_reason: VaultQuarantineReason = Field(alias="quarantineReason")
+    feasibility_checks: dict[str, object] = Field(alias="feasibilityChecks")
     draft_eligible: bool = Field(alias="draftEligible")
     details: dict[str, object]
     created_at: datetime = Field(alias="createdAt")
@@ -93,6 +165,11 @@ class VaultBulletCandidateRecord(BaseModel):
     story_angle: str | None = Field(default=None, alias="storyAngle")
     source_type: VaultSourceType = Field(alias="sourceType")
     review_state: VaultReviewState = Field(alias="reviewState")
+    memory_tier: VaultMemoryTier = Field(alias="memoryTier")
+    validation_status: VaultValidationStatus = Field(alias="validationStatus")
+    contamination_risk: VaultContaminationRisk = Field(alias="contaminationRisk")
+    quarantine_reason: VaultQuarantineReason = Field(alias="quarantineReason")
+    feasibility_checks: dict[str, object] = Field(alias="feasibilityChecks")
     draft_eligible: bool = Field(alias="draftEligible")
     supporting_fact_ids: list[str] = Field(alias="supportingFactIds")
     details: dict[str, object]
@@ -110,6 +187,11 @@ class VaultProjectStoryRecord(BaseModel):
     impact_summary: str | None = Field(default=None, alias="impactSummary")
     source_type: VaultSourceType = Field(alias="sourceType")
     review_state: VaultReviewState = Field(alias="reviewState")
+    memory_tier: VaultMemoryTier = Field(alias="memoryTier")
+    validation_status: VaultValidationStatus = Field(alias="validationStatus")
+    contamination_risk: VaultContaminationRisk = Field(alias="contaminationRisk")
+    quarantine_reason: VaultQuarantineReason = Field(alias="quarantineReason")
+    feasibility_checks: dict[str, object] = Field(alias="feasibilityChecks")
     draft_eligible: bool = Field(alias="draftEligible")
     details: dict[str, object]
     facts: list[VaultFactRecord]

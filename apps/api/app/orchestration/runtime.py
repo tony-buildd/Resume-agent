@@ -18,9 +18,13 @@ from pydantic import BaseModel
 from app.orchestration.blueprint import build_narrative_blueprint
 from app.orchestration.contracts import (
     AdvanceSessionResponse,
+    CapabilityRouteSummaryRecord,
+    ContextBudgetSummaryRecord,
     EvaluationScorecardRecord,
     InterrogationPromptRecord,
+    InterruptionType,
     JDAnalysisRecord,
+    MemoryRiskSummaryRecord,
     NarrativeBlueprintRecord,
     InterruptReason,
     ResearchSummaryRecord,
@@ -30,6 +34,7 @@ from app.orchestration.contracts import (
     SessionEnvelope,
     StageKey,
     StageStatus,
+    TrajectoryEvaluationSummaryRecord,
 )
 from app.orchestration.drafting import build_resume_package
 from app.orchestration.evaluation import evaluate_resume_package
@@ -66,10 +71,16 @@ def ensure_runtime_state(record: SessionRecord) -> dict[str, Any]:
     runtime.setdefault("current_stage", record.stage or StageKey.BOOTSTRAP.value)
     runtime.setdefault("stage_status", StageStatus.PENDING.value)
     runtime.setdefault("interrupt_reason", InterruptReason.NONE.value)
+    runtime.setdefault("interruption_type", None)
+    runtime.setdefault("replan_from_stage", None)
     runtime.setdefault("stage_history", [runtime["current_stage"]])
     runtime.setdefault("answers", {})
     runtime.setdefault("canonical_session_context", {})
     runtime.setdefault("transitions", [])
+    runtime.setdefault("memory_risk_summary", None)
+    runtime.setdefault("context_budget_summary", None)
+    runtime.setdefault("capability_route_summary", None)
+    runtime.setdefault("trajectory_evaluation_summary", None)
     runtime.setdefault("jd_analysis_artifact_id", None)
     runtime.setdefault("research_summary_artifact_id", None)
     runtime.setdefault("blueprint_artifact_id", None)
@@ -978,6 +989,42 @@ def build_session_envelope(
         status=record.status.value,
         stage=build_stage(record),
         stageHistory=[StageKey(stage) for stage in runtime["stage_history"]],
+        interruptionType=(
+            InterruptionType(runtime["interruption_type"])
+            if runtime.get("interruption_type")
+            else None
+        ),
+        replanFromStage=(
+            StageKey(runtime["replan_from_stage"])
+            if runtime.get("replan_from_stage")
+            else None
+        ),
+        memoryRiskSummary=(
+            MemoryRiskSummaryRecord.model_validate(runtime["memory_risk_summary"])
+            if runtime.get("memory_risk_summary")
+            else None
+        ),
+        contextBudgetSummary=(
+            ContextBudgetSummaryRecord.model_validate(
+                runtime["context_budget_summary"]
+            )
+            if runtime.get("context_budget_summary")
+            else None
+        ),
+        capabilityRouteSummary=(
+            CapabilityRouteSummaryRecord.model_validate(
+                runtime["capability_route_summary"]
+            )
+            if runtime.get("capability_route_summary")
+            else None
+        ),
+        trajectoryEvaluationSummary=(
+            TrajectoryEvaluationSummaryRecord.model_validate(
+                runtime["trajectory_evaluation_summary"]
+            )
+            if runtime.get("trajectory_evaluation_summary")
+            else None
+        ),
         artifactCount=len(ordered_artifacts),
         traceEventCount=len(ordered_events),
         artifacts=[build_runtime_artifact(artifact) for artifact in ordered_artifacts],

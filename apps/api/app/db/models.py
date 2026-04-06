@@ -75,6 +75,35 @@ class VaultReviewState(str, Enum):
     REJECTED = "rejected"
 
 
+class VaultMemoryTier(str, Enum):
+    CANONICAL = "canonical"
+    PROGRESS = "progress"
+    FEASIBILITY = "feasibility"
+    QUARANTINE = "quarantine"
+
+
+class VaultValidationStatus(str, Enum):
+    UNCHECKED = "unchecked"
+    NEEDS_REVIEW = "needs_review"
+    VALIDATED = "validated"
+    FAILED = "failed"
+
+
+class VaultContaminationRisk(str, Enum):
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+
+
+class VaultQuarantineReason(str, Enum):
+    NONE = "none"
+    LOW_CONFIDENCE = "low_confidence"
+    CONTRADICTION = "contradiction"
+    UNSUPPORTED_METRIC = "unsupported_metric"
+    CROSS_ROLE_LEAKAGE = "cross_role_leakage"
+    USER_FLAGGED = "user_flagged"
+
+
 bullet_candidate_fact_links = Table(
     "bullet_candidate_fact_links",
     Base.metadata,
@@ -264,6 +293,29 @@ class VaultProjectStory(TimestampMixin, Base):
         nullable=False,
         default=VaultReviewState.USER_STATED,
     )
+    memory_tier: Mapped[VaultMemoryTier] = mapped_column(
+        SqlEnum(VaultMemoryTier),
+        nullable=False,
+        default=VaultMemoryTier.CANONICAL,
+    )
+    validation_status: Mapped[VaultValidationStatus] = mapped_column(
+        SqlEnum(VaultValidationStatus),
+        nullable=False,
+        default=VaultValidationStatus.UNCHECKED,
+    )
+    contamination_risk: Mapped[VaultContaminationRisk] = mapped_column(
+        SqlEnum(VaultContaminationRisk),
+        nullable=False,
+        default=VaultContaminationRisk.LOW,
+    )
+    quarantine_reason: Mapped[VaultQuarantineReason] = mapped_column(
+        SqlEnum(VaultQuarantineReason),
+        nullable=False,
+        default=VaultQuarantineReason.NONE,
+    )
+    feasibility_checks: Mapped[dict[str, Any]] = mapped_column(
+        JSON, default=dict, nullable=False
+    )
     draft_eligible: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     details: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)
 
@@ -307,6 +359,29 @@ class VaultFact(TimestampMixin, Base):
         nullable=False,
         default=VaultReviewState.USER_STATED,
     )
+    memory_tier: Mapped[VaultMemoryTier] = mapped_column(
+        SqlEnum(VaultMemoryTier),
+        nullable=False,
+        default=VaultMemoryTier.CANONICAL,
+    )
+    validation_status: Mapped[VaultValidationStatus] = mapped_column(
+        SqlEnum(VaultValidationStatus),
+        nullable=False,
+        default=VaultValidationStatus.UNCHECKED,
+    )
+    contamination_risk: Mapped[VaultContaminationRisk] = mapped_column(
+        SqlEnum(VaultContaminationRisk),
+        nullable=False,
+        default=VaultContaminationRisk.LOW,
+    )
+    quarantine_reason: Mapped[VaultQuarantineReason] = mapped_column(
+        SqlEnum(VaultQuarantineReason),
+        nullable=False,
+        default=VaultQuarantineReason.NONE,
+    )
+    feasibility_checks: Mapped[dict[str, Any]] = mapped_column(
+        JSON, default=dict, nullable=False
+    )
     draft_eligible: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     details: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)
 
@@ -347,6 +422,29 @@ class VaultBulletCandidate(TimestampMixin, Base):
         SqlEnum(VaultReviewState),
         nullable=False,
         default=VaultReviewState.INFERRED,
+    )
+    memory_tier: Mapped[VaultMemoryTier] = mapped_column(
+        SqlEnum(VaultMemoryTier),
+        nullable=False,
+        default=VaultMemoryTier.CANONICAL,
+    )
+    validation_status: Mapped[VaultValidationStatus] = mapped_column(
+        SqlEnum(VaultValidationStatus),
+        nullable=False,
+        default=VaultValidationStatus.UNCHECKED,
+    )
+    contamination_risk: Mapped[VaultContaminationRisk] = mapped_column(
+        SqlEnum(VaultContaminationRisk),
+        nullable=False,
+        default=VaultContaminationRisk.LOW,
+    )
+    quarantine_reason: Mapped[VaultQuarantineReason] = mapped_column(
+        SqlEnum(VaultQuarantineReason),
+        nullable=False,
+        default=VaultQuarantineReason.NONE,
+    )
+    feasibility_checks: Mapped[dict[str, Any]] = mapped_column(
+        JSON, default=dict, nullable=False
     )
     draft_eligible: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     details: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)

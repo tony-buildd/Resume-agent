@@ -16,6 +16,14 @@ export type StageKey =
 
 export type StageStatus = "pending" | "running" | "interrupted" | "complete";
 
+export type InterruptionType =
+  | "add_requirement"
+  | "revise_requirement"
+  | "retract_requirement"
+  | "clarify_fact"
+  | "risk_flag"
+  | "request_revision";
+
 export interface RuntimeStage {
   key: StageKey;
   label: string;
@@ -46,6 +54,35 @@ export interface RuntimeTraceEvent {
   createdAt: string;
 }
 
+export interface MemoryRiskSummary {
+  quarantinedItems: number;
+  highRiskItems: number;
+  failedFeasibilityItems: number;
+  notes: string[];
+}
+
+export interface ContextBudgetSummary {
+  tokenBudget: number;
+  reservedBudget: number;
+  compressed: boolean;
+  notes: string[];
+}
+
+export interface CapabilityRouteSummary {
+  selectedCapability: string | null;
+  sourceType: string | null;
+  fallbackUsed: boolean;
+  confidence: string | null;
+  notes: string[];
+}
+
+export interface TrajectoryEvaluationSummary {
+  questionQuality: string | null;
+  actionEfficiency: string | null;
+  revisionEfficiency: string | null;
+  notes: string[];
+}
+
 export interface SessionEnvelope {
   id: string;
   userId: string;
@@ -54,6 +91,12 @@ export interface SessionEnvelope {
   status: string;
   stage: RuntimeStage;
   stageHistory: StageKey[];
+  interruptionType: InterruptionType | null;
+  replanFromStage: StageKey | null;
+  memoryRiskSummary: MemoryRiskSummary | null;
+  contextBudgetSummary: ContextBudgetSummary | null;
+  capabilityRouteSummary: CapabilityRouteSummary | null;
+  trajectoryEvaluationSummary: TrajectoryEvaluationSummary | null;
   artifactCount: number;
   traceEventCount: number;
   artifacts: RuntimeArtifact[];
@@ -75,6 +118,8 @@ export interface AdvanceSessionPayload {
   approveCheckpoint?: boolean;
   acceptDraftReview?: boolean;
   requestRevision?: boolean;
+  interruptionType?: InterruptionType;
+  interruptionNote?: string;
 }
 
 const DEFAULT_API_BASE_URL = "http://127.0.0.1:8000";
