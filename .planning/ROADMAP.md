@@ -15,7 +15,7 @@ This roadmap builds Resume Agent from project skeleton to a production-ready MVP
 - [x] **Phase 2: Career Vault** - Build the persistent memory layer for roles, stories, facts, provenance, and reusable bullet candidates.
 - [x] **Phase 3: Resume Session Flow** - Implement JD analysis, research, interrogation, blueprint approval, drafting, and evaluator-driven revision loops.
 - [x] **Phase 4: Frontend Experience** - Build the chat-first workspace with contextual panels, inline approvals, diffs, and trace views.
-- [ ] **Phase 5: Ship / Polish** - Harden operations, documentation, onboarding, and release packaging for a usable MVP.
+- [x] **Phase 5: Ship / Polish** - Harden operations, documentation, onboarding, and release packaging for a usable MVP.
 
 ## Phase Details
 
@@ -106,8 +106,8 @@ Plans:
 
 Plans:
 
-- [ ] 05-01: Document local setup, env management, and developer onboarding.
-- [ ] 05-02: Add deployment/release hardening and project operating docs.
+- [x] 05-01: Document local setup, env management, and developer onboarding.
+- [x] 05-02: Add deployment/release hardening and project operating docs.
 
 ## Progress
 
@@ -120,4 +120,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 | 2. Career Vault        | 3/3            | Complete    | 2026-04-06 |
 | 3. Resume Session Flow | 4/4            | Complete    | 2026-04-05 |
 | 4. Frontend Experience | 3/3            | Complete    | 2026-04-05 |
-| 5. Ship / Polish       | 0/2            | Not started | -          |
+| 5. Ship / Polish       | 2/2            | Complete    | 2026-04-05 |
