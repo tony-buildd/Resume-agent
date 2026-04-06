@@ -89,7 +89,7 @@ Plans:
 Plans:
 
 - [x] 04-01: Build the chat-centered shell and contextual panel system.
-- [ ] 04-02: Build inline approval, editing, and artifact diff interactions.
+- [x] 04-02: Build inline approval, editing, and artifact diff interactions.
 - [ ] 04-03: Build trace summary and expanded debug/detail views with strong usability and accessibility.
 
 ### Phase 5: Ship / Polish
@@ -119,5 +119,5 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 | 1. Foundations         | 3/3            | Complete    | 2026-04-05 |
 | 2. Career Vault        | 3/3            | Complete    | 2026-04-06 |
 | 3. Resume Session Flow | 4/4            | Complete    | 2026-04-05 |
-| 4. Frontend Experience | 1/3            | In progress | -          |
+| 4. Frontend Experience | 2/3            | In progress | -          |
 | 5. Ship / Polish       | 0/2            | Not started | -          |
