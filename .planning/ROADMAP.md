@@ -18,7 +18,7 @@ This roadmap builds Resume Agent from project skeleton to a hardened, inspectabl
 - [x] **Phase 5: Ship / Polish** - Harden operations, documentation, onboarding, and release packaging for a usable MVP.
 - [x] **Phase 6: Agent Capability Integration** - Add Codex-native wrappers, bootstrap scripts, and docs for external skill ecosystems and agent tooling.
 - [x] **Phase 7: Runtime Hardening and Memory Safety** - Split trust from safety, add interruption intents, delta replanning, and quarantine/feasibility enforcement.
-- [ ] **Phase 8: Hierarchical Retrieval and Context Budgeting** - Replace flat retrieval with role/story/evidence selection and budget-aware context assembly.
+- [x] **Phase 8: Hierarchical Retrieval and Context Budgeting** - Replace flat retrieval with role/story/evidence selection and budget-aware context assembly.
 - [ ] **Phase 9: Adaptive Evaluation and Review Loop** - Replace the shallow evaluator with role-aware rubrics, trajectory judgments, and replayable QA fixtures.
 - [ ] **Phase 10: Capability Routing and Research Orchestration** - Add a capability registry, API-first routing policy, and multi-pass research artifacts with citations.
 - [ ] **Phase 11: Progressive UX and Control Surfaces** - Expose interruption, evidence, risk, and route controls progressively without overwhelming the workspace.
@@ -165,9 +165,9 @@ Plans:
 
 Plans:
 
-- [ ] 08-01: Implement hierarchical role/story/evidence retrieval and scoring traces.
-- [ ] 08-02: Implement a context budget manager with budget slices and compression summaries.
-- [ ] 08-03: Move blueprint selection to configurable evidence budgets and expose retrieval/compression artifacts.
+- [x] 08-01: Implement hierarchical role/story/evidence retrieval and scoring traces.
+- [x] 08-02: Implement a context budget manager with budget slices and compression summaries.
+- [x] 08-03: Move blueprint selection to configurable evidence budgets and expose retrieval/compression artifacts.
 
 ### Phase 9: Adaptive Evaluation and Review Loop
 

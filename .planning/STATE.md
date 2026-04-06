@@ -5,15 +5,15 @@
 See: .planning/PROJECT.md (updated 2026-04-05)
 
 **Core value:** Turn fragmented career context into a credible, strategically tailored one-page resume that matches a target role without hiding how the system reached its recommendations.
-**Current focus:** Hierarchical retrieval milestone kickoff
+**Current focus:** Adaptive evaluation milestone execution
 
 ## Current Position
 
-Phase: 8 of 11 (Hierarchical Retrieval and Context Budgeting)
-Plan: 08-01
+Phase: 9 of 11 (Adaptive Evaluation and Review Loop)
+Plan: 09-01
 Status: In Progress
-Last activity: 2026-04-05 — Completed Phase 7 runtime hardening and queued Phase 8 retrieval work
-Progress: [██████░░░░] 64%
+Last activity: 2026-04-05 — Completed Phase 8 hierarchical retrieval and queued Phase 9 rubric work
+Progress: [███████░░░] 73%
 
 ## Performance Metrics
 
@@ -78,8 +78,8 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-- Start Phase 8 by replacing flat role ranking with role -> story -> evidence retrieval.
-- Carry forward the paper-review findings as acceptance checks for Phases 8-10.
+- Start Phase 9 by replacing the fixed evaluator with role-aware rubric generation.
+- Carry forward the paper-review findings as acceptance checks for Phases 9-10.
 
 ### Blockers/Concerns
 
@@ -88,6 +88,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-04-06 00:35
-Stopped at: Phase 7 complete; next step is Phase 8 hierarchical retrieval and context budgeting
+Last session: 2026-04-06 01:28
+Stopped at: Phase 8 complete; next step is Phase 9 adaptive evaluation and review loop
 Resume file: None
