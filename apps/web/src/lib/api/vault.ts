@@ -11,6 +11,11 @@ export interface VaultFactRecord {
   evidence: string | null;
   sourceType: string;
   reviewState: string;
+  memoryTier: string;
+  validationStatus: string;
+  contaminationRisk: string;
+  quarantineReason: string;
+  feasibilityChecks: Record<string, unknown>;
   draftEligible: boolean;
   details: Record<string, unknown>;
   createdAt: string;
@@ -23,6 +28,11 @@ export interface VaultBulletCandidateRecord {
   storyAngle: string | null;
   sourceType: string;
   reviewState: string;
+  memoryTier: string;
+  validationStatus: string;
+  contaminationRisk: string;
+  quarantineReason: string;
+  feasibilityChecks: Record<string, unknown>;
   draftEligible: boolean;
   supportingFactIds: string[];
   details: Record<string, unknown>;
@@ -38,6 +48,11 @@ export interface VaultProjectStoryRecord {
   impactSummary: string | null;
   sourceType: string;
   reviewState: string;
+  memoryTier: string;
+  validationStatus: string;
+  contaminationRisk: string;
+  quarantineReason: string;
+  feasibilityChecks: Record<string, unknown>;
   draftEligible: boolean;
   details: Record<string, unknown>;
   facts: VaultFactRecord[];
@@ -96,11 +111,23 @@ export interface VaultSemanticMatchRecord {
   distance: number | null;
 }
 
+export interface VaultRetrievalTraceRecord {
+  mode: string;
+  level: string;
+  itemId: string | null;
+  parentId: string | null;
+  label: string;
+  score: number;
+  selected: boolean;
+  reason: string;
+}
+
 export interface VaultRetrievalResponse {
   query: string | null;
   draftSafeRoles: VaultRoleRecord[];
   questioningSafeRoles: VaultRoleRecord[];
   semanticMatches: VaultSemanticMatchRecord[];
+  selectionTraces: VaultRetrievalTraceRecord[];
 }
 
 const DEFAULT_API_BASE_URL = "http://127.0.0.1:8000";
@@ -174,6 +201,8 @@ export async function createVaultInterviewSession(input?: {
 export async function retrieveVaultContext(input?: {
   query?: string;
   limit?: number;
+  storyLimit?: number;
+  evidenceLimit?: number;
   includeSemantic?: boolean;
 }): Promise<VaultRetrievalResponse> {
   return apiFetch<VaultRetrievalResponse>("/api/vault/retrieval", {
@@ -181,6 +210,8 @@ export async function retrieveVaultContext(input?: {
     body: JSON.stringify({
       query: input?.query ?? null,
       limit: input?.limit ?? 5,
+      storyLimit: input?.storyLimit ?? 2,
+      evidenceLimit: input?.evidenceLimit ?? 3,
       includeSemantic: input?.includeSemantic ?? true,
     }),
   });

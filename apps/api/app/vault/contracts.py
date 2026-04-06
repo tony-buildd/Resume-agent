@@ -290,6 +290,8 @@ class CreateVaultInterviewSessionRequest(BaseModel):
 class VaultRetrievalRequest(BaseModel):
     query: str | None = None
     limit: int = Field(default=5, ge=1, le=20)
+    story_limit: int = Field(default=2, ge=1, le=10, alias="storyLimit")
+    evidence_limit: int = Field(default=3, ge=1, le=10, alias="evidenceLimit")
     include_semantic: bool = Field(default=True, alias="includeSemantic")
 
 
@@ -302,6 +304,19 @@ class VaultSemanticMatchRecord(BaseModel):
     distance: float | None = None
 
 
+class VaultRetrievalTraceRecord(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    mode: str
+    level: str
+    item_id: str | None = Field(default=None, alias="itemId")
+    parent_id: str | None = Field(default=None, alias="parentId")
+    label: str
+    score: int
+    selected: bool
+    reason: str
+
+
 class VaultRetrievalResponse(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
@@ -311,4 +326,8 @@ class VaultRetrievalResponse(BaseModel):
     semantic_matches: list[VaultSemanticMatchRecord] = Field(
         default_factory=list,
         alias="semanticMatches",
+    )
+    selection_traces: list[VaultRetrievalTraceRecord] = Field(
+        default_factory=list,
+        alias="selectionTraces",
     )
