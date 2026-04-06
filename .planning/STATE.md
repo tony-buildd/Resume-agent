@@ -5,24 +5,24 @@
 See: .planning/PROJECT.md (updated 2026-04-05)
 
 **Core value:** Turn fragmented career context into a credible, strategically tailored one-page resume that matches a target role without hiding how the system reached its recommendations.
-**Current focus:** Phase 4: Frontend Experience
+**Current focus:** Phase 5: Ship / Polish
 
 ## Current Position
 
-Phase: 4 of 5 (Frontend Experience)
-Plan: 3 of 3 in current phase
+Phase: 5 of 5 (Ship / Polish)
+Plan: discussion/planning
 Status: In progress
-Last activity: 2026-04-05 — Completed plan 04-02 and queued trace/accessibility polish
+Last activity: 2026-04-05 — Completed Phase 4 and queued shipping/polish planning
 
-Progress: [████████░░] 80%
+Progress: [█████████░] 90%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 12
+- Total plans completed: 13
 - Average duration: 57 min
-- Total execution time: 10.9 hours
+- Total execution time: 11.4 hours
 
 **By Phase:**
 
@@ -31,11 +31,11 @@ Progress: [████████░░] 80%
 | 1     | 3     | 192 min | 64 min   |
 | 2     | 3     | 172 min | 57.3 min |
 | 3     | 4     | 205 min | 51.3 min |
-| 4     | 2     | 85 min  | 42.5 min |
+| 4     | 3     | 116 min | 38.7 min |
 
 **Recent Trend:**
 
-- Last 5 plans: 38 min, 41 min, 34 min, 46 min, 39 min
+- Last 5 plans: 41 min, 34 min, 46 min, 39 min, 31 min
 - Trend: Stable
 
 ## Accumulated Context
@@ -59,6 +59,7 @@ Recent decisions affecting current work:
 - Plan 03-04: Score drafts before completion and route revisions to the earliest affected stage instead of restarting the session
 - Plan 04-01: Move the workspace from a raw dashboard to a chat-centered shell with stage-aware artifact rendering
 - Plan 04-02: Add in-panel review controls and artifact comparison views so approvals and revisions happen on the active workspace surface
+- Plan 04-03: Add summary-first trace inspection and accessibility polish so the workspace is ready for verification and shipping
 
 ### Pending Todos
 
@@ -67,10 +68,10 @@ None yet.
 ### Blockers/Concerns
 
 - External research docs in `.planning/research/` are bootstrap baselines and should be validated during later implementation
-- No active blockers; next step is executing Phase 4 plan `04-03`
+- No active blockers; next step is Phase 5 discussion and planning
 
 ## Session Continuity
 
 Last session: 2026-04-05 14:09
-Stopped at: Phase 4 plan `04-03` is ready for execution
+Stopped at: Phase 5 discussion/planning is ready to begin
 Resume file: None
