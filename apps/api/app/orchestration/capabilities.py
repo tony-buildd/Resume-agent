@@ -6,6 +6,7 @@ from app.orchestration.contracts import (
     CapabilityRouteCandidateRecord,
     CapabilityRouteRecord,
     CapabilityRouteSummaryRecord,
+    CapabilityRouteTraceStepRecord,
 )
 
 
@@ -120,6 +121,14 @@ def plan_capability_route(
     notes = [
         "Routing policy prefers internal and structured sources before browser fallback.",
     ]
+    route_trace = [
+        CapabilityRouteTraceStepRecord(
+            capabilityKey="internal_jd_analysis",
+            sourceType="internal",
+            decision="selected",
+            reason="The runtime always begins from the user-provided job description and deterministic parsing.",
+        )
+    ]
     source_type = "internal"
     fallback_used = False
     confidence = "high"
@@ -134,6 +143,14 @@ def plan_capability_route(
                 reason="OpenAI structured web research is available for source-backed company and role context.",
             )
         )
+        route_trace.append(
+            CapabilityRouteTraceStepRecord(
+                capabilityKey="openai_web_research",
+                sourceType="api",
+                decision="selected",
+                reason="Structured web research is available, so company and market context can use an API-backed source before any browser fallback.",
+            )
+        )
         notes.append("External company and market context can be sourced through structured API-backed web research.")
     else:
         candidates.append(
@@ -141,6 +158,14 @@ def plan_capability_route(
                 capabilityKey="openai_web_research",
                 selected=False,
                 reason="Provider-backed web research is unavailable, so the system stays on internal parsing and heuristic research.",
+            )
+        )
+        route_trace.append(
+            CapabilityRouteTraceStepRecord(
+                capabilityKey="openai_web_research",
+                sourceType="api",
+                decision="deferred",
+                reason="Provider-backed web research is unavailable for this runtime.",
             )
         )
         notes.append("External API research is unavailable, so the route remains deterministic.")
@@ -151,6 +176,14 @@ def plan_capability_route(
                 capabilityKey="huggingface_papers",
                 selected=False,
                 reason="Relevant when the task references papers or research metadata, but not needed for ordinary JD analysis.",
+            )
+        )
+        route_trace.append(
+            CapabilityRouteTraceStepRecord(
+                capabilityKey="huggingface_papers",
+                sourceType="structured_external",
+                decision="available",
+                reason="Paper-oriented metadata lookup is available for research-heavy tasks, but not selected for standard JD research.",
             )
         )
 
@@ -174,6 +207,28 @@ def plan_capability_route(
             ),
         ]
     )
+    route_trace.extend(
+        [
+            CapabilityRouteTraceStepRecord(
+                capabilityKey="browser_use_fallback",
+                sourceType="browser",
+                decision="fallback",
+                reason="Browser automation remains a last resort after internal and API-backed sources.",
+            ),
+            CapabilityRouteTraceStepRecord(
+                capabilityKey="hermes_sidecar",
+                sourceType="sidecar",
+                decision="deferred",
+                reason="Hermes is intentionally kept out of the primary runtime route.",
+            ),
+            CapabilityRouteTraceStepRecord(
+                capabilityKey="paper2code_design",
+                sourceType="structured_external",
+                decision="deferred",
+                reason="Paper2Code is reserved for architecture research follow-up rather than normal JD analysis.",
+            ),
+        ]
+    )
 
     return CapabilityRouteRecord(
         summary=CapabilityRouteSummaryRecord(
@@ -185,5 +240,6 @@ def plan_capability_route(
         ),
         selectedCapability=registry_map[selected_key],
         candidates=candidates,
+        routeTrace=route_trace,
         registry=registry,
     )

@@ -330,13 +330,45 @@ class CapabilityRouteCandidateRecord(BaseModel):
     fallback: bool = False
 
 
+class CapabilityRouteTraceStepRecord(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    capability_key: str = Field(alias="capabilityKey")
+    source_type: str = Field(alias="sourceType")
+    decision: str
+    reason: str
+
+
 class CapabilityRouteRecord(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     summary: CapabilityRouteSummaryRecord
     selected_capability: CapabilityDescriptorRecord = Field(alias="selectedCapability")
     candidates: list[CapabilityRouteCandidateRecord]
+    route_trace: list[CapabilityRouteTraceStepRecord] = Field(alias="routeTrace")
     registry: list[CapabilityDescriptorRecord]
+
+
+class PaperDesignInputRecord(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    paper_title: str = Field(alias="paperTitle")
+    abstract: str
+    key_findings: list[str] = Field(alias="keyFindings")
+    implementation_goal: str = Field(alias="implementationGoal")
+
+
+class PaperDesignBriefRecord(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    paper_title: str = Field(alias="paperTitle")
+    implementation_goal: str = Field(alias="implementationGoal")
+    planning_summary: str = Field(alias="planningSummary")
+    stated_claims: list[str] = Field(alias="statedClaims")
+    inferred_design_decisions: list[str] = Field(alias="inferredDesignDecisions")
+    analysis_questions: list[str] = Field(alias="analysisQuestions")
+    coding_phases: list[str] = Field(alias="codingPhases")
+    evaluation_checks: list[str] = Field(alias="evaluationChecks")
 
 
 class TrajectoryEvaluationSummaryRecord(BaseModel):
