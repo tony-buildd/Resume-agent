@@ -5,24 +5,24 @@
 See: .planning/PROJECT.md (updated 2026-04-05)
 
 **Core value:** Turn fragmented career context into a credible, strategically tailored one-page resume that matches a target role without hiding how the system reached its recommendations.
-**Current focus:** Phase 4: Frontend Experience
+**Current focus:** Milestone complete
 
 ## Current Position
 
-Phase: 4 of 5 (Frontend Experience)
-Plan: 2 of 3 in current phase
-Status: In progress
-Last activity: 2026-04-05 — Completed plan 04-01 and queued inline review/diff work
+Phase: 5 of 5 (Ship / Polish)
+Plan: complete
+Status: Complete
+Last activity: 2026-04-05 — Completed Phase 5 and closed the current milestone
 
-Progress: [████████░░] 80%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 11
+- Total plans completed: 15
 - Average duration: 57 min
-- Total execution time: 10.2 hours
+- Total execution time: 12.2 hours
 
 **By Phase:**
 
@@ -31,11 +31,12 @@ Progress: [████████░░] 80%
 | 1     | 3     | 192 min | 64 min   |
 | 2     | 3     | 172 min | 57.3 min |
 | 3     | 4     | 205 min | 51.3 min |
-| 4     | 1     | 46 min  | 46 min   |
+| 4     | 3     | 116 min | 38.7 min |
+| 5     | 2     | 52 min  | 26 min   |
 
 **Recent Trend:**
 
-- Last 5 plans: 92 min, 38 min, 41 min, 34 min, 46 min
+- Last 5 plans: 46 min, 39 min, 31 min, 28 min, 24 min
 - Trend: Stable
 
 ## Accumulated Context
@@ -58,18 +59,22 @@ Recent decisions affecting current work:
 - Plan 03-03: Build the strategist/writer path from draft-safe vault evidence and persist one coherent draft package artifact
 - Plan 03-04: Score drafts before completion and route revisions to the earliest affected stage instead of restarting the session
 - Plan 04-01: Move the workspace from a raw dashboard to a chat-centered shell with stage-aware artifact rendering
+- Plan 04-02: Add in-panel review controls and artifact comparison views so approvals and revisions happen on the active workspace surface
+- Plan 04-03: Add summary-first trace inspection and accessibility polish so the workspace is ready for verification and shipping
+- Plan 05-01: Document local setup, environment expectations, and day-one contributor onboarding
+- Plan 05-02: Document deployment, release, and the GSD operating model for future maintainers
 
 ### Pending Todos
 
-None yet.
+- Consider a next milestone for CI/CD automation and a concrete production deployment target once hosting is locked.
 
 ### Blockers/Concerns
 
 - External research docs in `.planning/research/` are bootstrap baselines and should be validated during later implementation
-- No active blockers; next step is executing Phase 4 plan `04-02`
+- No active blockers; current roadmap is complete
 
 ## Session Continuity
 
 Last session: 2026-04-05 14:09
-Stopped at: Phase 4 plan `04-02` is ready for execution
+Stopped at: Current milestone complete; next step would be a new milestone or shipping workflow
 Resume file: None

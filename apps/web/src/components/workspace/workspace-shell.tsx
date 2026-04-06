@@ -2,6 +2,7 @@ import type { StoryCheckpointRecord, VaultRoleRecord } from "@/lib/api/vault";
 import type { SessionEnvelope } from "@/lib/api/sessions";
 
 import { ArtifactPanel, selectActiveArtifact } from "./artifact-panel";
+import { TracePanel } from "./trace-panel";
 
 type VaultPromptSummary = {
   title: string;
@@ -45,7 +46,7 @@ export function WorkspaceShell({
     <section className="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(340px,0.95fr)]">
       <article className="overflow-hidden rounded-[34px] border border-slate-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(244,247,255,0.96))] p-6 shadow-[0_28px_90px_-48px_rgba(15,23,42,0.55)] sm:p-7">
         <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="max-w-2xl">
+          <div className="max-w-2xl" aria-live="polite">
             <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-500">
               Guided workspace
             </p>
@@ -128,10 +129,14 @@ export function WorkspaceShell({
             <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">
               Session map
             </p>
-            <div className="mt-4 flex flex-wrap gap-2">
+            <ol
+              className="mt-4 flex list-none flex-wrap gap-2 p-0"
+              aria-label="Session stage history"
+            >
               {session.stageHistory.map((stageKey, index) => (
-                <span
+                <li
                   key={`${stageKey}-${index}`}
+                  aria-current={stageKey === session.stage.key ? "step" : undefined}
                   className={`rounded-full px-3 py-2 text-[11px] font-medium uppercase tracking-[0.18em] ${
                     stageKey === session.stage.key
                       ? "bg-slate-950 text-white"
@@ -139,9 +144,9 @@ export function WorkspaceShell({
                   }`}
                 >
                   {stageKey}
-                </span>
+                </li>
               ))}
-            </div>
+            </ol>
 
             <dl className="mt-5 grid grid-cols-3 gap-3">
               <MetricCard
@@ -161,36 +166,7 @@ export function WorkspaceShell({
         </div>
 
         <div className="mt-6 grid gap-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(240px,0.85fr)]">
-          <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_18px_45px_-36px_rgba(15,23,42,0.35)]">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-slate-950">
-                Recent trace summary
-              </h3>
-              <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-medium text-slate-600">
-                last {Math.min(session.traceEvents.length, 4)}
-              </span>
-            </div>
-            <div className="mt-4 space-y-3">
-              {session.traceEvents.slice(-4).map((event) => (
-                <article
-                  key={event.id}
-                  className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4"
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-                      {event.stage}
-                    </p>
-                    <span className="text-[11px] text-slate-500">
-                      {event.level}
-                    </span>
-                  </div>
-                  <p className="mt-2 text-sm leading-6 text-slate-800">
-                    {event.message}
-                  </p>
-                </article>
-              ))}
-            </div>
-          </section>
+          <TracePanel events={session.traceEvents} />
 
           <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_18px_45px_-36px_rgba(15,23,42,0.35)]">
             <div className="flex items-center justify-between">
@@ -250,7 +226,7 @@ export function WorkspaceShell({
               {session.artifactCount}
             </span>
           </div>
-          <div className="mt-4 space-y-3">
+          <div className="mt-4 space-y-3" aria-label="Artifact history">
             {session.artifacts
               .slice()
               .reverse()
