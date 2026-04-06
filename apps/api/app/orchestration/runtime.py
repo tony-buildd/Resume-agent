@@ -16,6 +16,7 @@ from app.db.models import (
 from pydantic import BaseModel
 
 from app.orchestration.blueprint import build_narrative_blueprint
+from app.orchestration.context_budget import apply_context_budget
 from app.orchestration.contracts import (
     AdvanceSessionResponse,
     CapabilityRouteSummaryRecord,
@@ -444,6 +445,35 @@ def refresh_memory_risk_summary(
             level=EventLevel.WARNING,
         )
     return summary
+
+
+def refresh_context_budget_summary(
+    db: Session,
+    record: SessionRecord,
+    runtime: dict[str, Any],
+    *,
+    stage: StageKey,
+) -> dict[str, Any]:
+    budgeted_context, summary = apply_context_budget(
+        runtime.get("canonical_session_context") or {},
+        stage=stage,
+    )
+    runtime["budgeted_canonical_context"] = budgeted_context
+    runtime["context_budget_summary"] = serialize_model_payload(summary)
+    upsert_stage_artifact(
+        db,
+        record,
+        stage=stage,
+        kind="context-budget-summary",
+        status=ArtifactStatus.CANONICAL,
+        title="Context budget summary",
+        summary="Stage-specific context budgeting and compression decisions.",
+        payload={
+            "summary": runtime["context_budget_summary"],
+            "budgetedContext": budgeted_context,
+        },
+    )
+    return budgeted_context
 
 
 def parse_jd_analysis(runtime: dict[str, Any]) -> JDAnalysisRecord:
@@ -899,6 +929,12 @@ def advance_session(
                 prompt=interrogation_prompt,
                 answer=latest_answer,
             )
+            refresh_context_budget_summary(
+                db,
+                record,
+                runtime,
+                stage=stage,
+            )
             upsert_stage_artifact(
                 db,
                 record,
@@ -943,7 +979,12 @@ def advance_session(
                 user=record.user,
                 analysis=jd_analysis,
                 research=research_summary,
-                canonical_context=runtime["canonical_session_context"],
+                canonical_context=refresh_context_budget_summary(
+                    db,
+                    record,
+                    runtime,
+                    stage=stage,
+                ),
             )
             runtime["narrative_blueprint"] = serialize_model_payload(blueprint_record)
             blueprint = upsert_stage_artifact(
