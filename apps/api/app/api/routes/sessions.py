@@ -146,6 +146,7 @@ def advance_existing_session(
         answer=payload.answer,
         approve_jd_analysis=payload.approve_jd_analysis,
         approve_blueprint=payload.approve_blueprint,
+        approve_checkpoint=payload.approve_checkpoint,
         accept_draft_review=payload.accept_draft_review,
         request_revision=payload.request_revision,
         interruption_type=payload.interruption_type,

@@ -11,6 +11,7 @@ type ArtifactPanelProps = {
   stageKey: StageKey;
   sessionId: string;
   workspaceMode: "resume" | "vault";
+  surfaceMode: "micro" | "sidecar" | "full";
 };
 
 const stageArtifactPriority: Partial<Record<StageKey, string[]>> = {
@@ -18,11 +19,16 @@ const stageArtifactPriority: Partial<Record<StageKey, string[]>> = {
   vault_role_interview: ["vault-question"],
   vault_story_checkpoint: ["vault-checkpoint", "vault-role-record"],
   jd_intake: ["question"],
-  jd_analysis_review: ["jd-analysis", "research-summary"],
+  jd_analysis_review: [
+    "strategy-synthesis",
+    "jd-analysis",
+    "capability-route",
+    "research-summary",
+  ],
   career_intake: ["interrogation-question", "session-context"],
   blueprint_review: ["blueprint", "session-context"],
-  draft_review: ["draft-package", "evaluation-scorecard"],
-  complete: ["draft-package", "evaluation-scorecard", "blueprint"],
+  draft_review: ["evaluation-scorecard", "draft-package"],
+  complete: ["evaluation-scorecard", "draft-package", "blueprint"],
 };
 
 export function ArtifactPanel({
@@ -33,6 +39,7 @@ export function ArtifactPanel({
   stageKey,
   sessionId,
   workspaceMode,
+  surfaceMode,
 }: ArtifactPanelProps) {
   return (
     <section className="rounded-[30px] border border-slate-200/80 bg-white/96 p-6 shadow-[0_24px_80px_-42px_rgba(15,23,42,0.4)]">
@@ -66,6 +73,7 @@ export function ArtifactPanel({
         stageKey={stageKey}
         sessionId={sessionId}
         workspaceMode={workspaceMode}
+        surfaceMode={surfaceMode}
       />
     </section>
   );
@@ -100,6 +108,10 @@ function ArtifactPayload({
       return <JDAnalysisPayload artifact={artifact} />;
     case "research-summary":
       return <ResearchSummaryPayload artifact={artifact} />;
+    case "strategy-synthesis":
+      return <StrategySynthesisPayload artifact={artifact} />;
+    case "capability-route":
+      return <CapabilityRoutePayload artifact={artifact} />;
     case "interrogation-question":
     case "question":
     case "vault-question":
@@ -154,6 +166,85 @@ function ResearchSummaryPayload({ artifact }: { artifact: RuntimeArtifact }) {
         values={readStringArray(research?.sourceNotes)}
         tone="amber"
       />
+    </div>
+  );
+}
+
+function StrategySynthesisPayload({ artifact }: { artifact: RuntimeArtifact }) {
+  const synthesis = readObject(artifact.payload);
+  return (
+    <div className="space-y-4">
+      <MetricRow
+        label="Strategic summary"
+        value={readString(synthesis?.strategicSummary) ?? "Unavailable"}
+      />
+      <MetricRow
+        label="Confidence"
+        value={readString(synthesis?.confidence) ?? "Unavailable"}
+      />
+      <TagList
+        label="Market signals"
+        values={readStringArray(synthesis?.marketSignals)}
+        tone="cyan"
+      />
+      <TagList
+        label="Citations"
+        values={readStringArray(synthesis?.citations)}
+        tone="amber"
+      />
+    </div>
+  );
+}
+
+function CapabilityRoutePayload({ artifact }: { artifact: RuntimeArtifact }) {
+  const summary = readObject(artifact.payload.summary);
+  const selectedCapability = readObject(artifact.payload.selectedCapability);
+  const routeTrace = readArray(artifact.payload.routeTrace)
+    .map((value: unknown) => readObject(value))
+    .filter((value): value is Record<string, unknown> => Boolean(value));
+
+  return (
+    <div className="space-y-4">
+      <MetricRow
+        label="Selected capability"
+        value={readString(selectedCapability?.label) ?? "Unavailable"}
+      />
+      <MetricRow
+        label="Source type"
+        value={readString(summary?.sourceType) ?? "Unavailable"}
+      />
+      <MetricRow
+        label="Confidence"
+        value={readString(summary?.confidence) ?? "Unavailable"}
+      />
+      <TagList
+        label="Route notes"
+        values={readStringArray(summary?.notes)}
+        tone="slate"
+      />
+      <div className="rounded-[20px] border border-slate-200 bg-white px-4 py-4">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+          Route trace
+        </p>
+        <div className="mt-3 space-y-3">
+          {routeTrace.map((step) => (
+            <div
+              key={`${readString(step.capabilityKey) ?? "trace"}-${readString(step.decision) ?? "decision"}`}
+              className="rounded-[16px] border border-slate-200 bg-slate-50 px-3 py-3"
+            >
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                {readString(step.decision) ?? "Decision"}
+              </p>
+              <p className="mt-1 text-sm font-semibold text-slate-950">
+                {readString(step.capabilityKey) ?? "Capability"}
+              </p>
+              <p className="mt-2 text-sm leading-6 text-slate-700">
+                {readString(step.reason) ?? "No reason recorded."}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

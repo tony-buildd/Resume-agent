@@ -38,6 +38,8 @@ export function WorkspaceShell({
     session.artifacts,
     session.stage.key,
   );
+  const surfaceMode = determineSurfaceMode(session);
+  const workspaceSignals = buildWorkspaceSignals(session);
   const statusClass =
     statusStyles[session.status] ??
     "border-slate-200 bg-slate-100 text-slate-700";
@@ -129,6 +131,17 @@ export function WorkspaceShell({
             <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">
               Session map
             </p>
+            <div className="mt-4 rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-4">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                Surface mode
+              </p>
+              <p className="mt-2 text-sm font-semibold text-slate-950">
+                {surfaceMode.label}
+              </p>
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                {surfaceMode.description}
+              </p>
+            </div>
             <ol
               className="mt-4 flex list-none flex-wrap gap-2 p-0"
               aria-label="Session stage history"
@@ -162,8 +175,61 @@ export function WorkspaceShell({
                 value={String(session.traceEventCount)}
               />
             </dl>
+
+            {(session.interruptionType || session.replanFromStage) && (
+              <div className="mt-4 flex flex-wrap gap-2">
+                {session.interruptionType ? (
+                  <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-amber-900">
+                    {session.interruptionType}
+                  </span>
+                ) : null}
+                {session.replanFromStage ? (
+                  <span className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-sky-900">
+                    rerun from {session.replanFromStage}
+                  </span>
+                ) : null}
+              </div>
+            )}
           </section>
         </div>
+
+        {workspaceSignals.length > 0 ? (
+          <section className="mt-6 rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_18px_45px_-36px_rgba(15,23,42,0.35)]">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">
+                  Runtime signals
+                </p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  Progressive control surfaces stay compact by surfacing only the active route, risk, budget, and evaluation signals.
+                </p>
+              </div>
+              <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-medium text-slate-600">
+                {workspaceSignals.length} active
+              </span>
+            </div>
+            <div className="mt-4 grid gap-3 lg:grid-cols-2">
+              {workspaceSignals.map((signal) => (
+                <article
+                  key={signal.label}
+                  className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4"
+                >
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                    {signal.label}
+                  </p>
+                  <p className="mt-2 text-sm font-semibold text-slate-950">
+                    {signal.value}
+                  </p>
+                  <ul className="mt-3 space-y-1 text-sm leading-6 text-slate-600">
+                    {signal.notes.map((note, index) => (
+                      <li key={`${signal.label}-${index}`}>• {note}</li>
+                    ))}
+                  </ul>
+                </article>
+              ))}
+            </div>
+          </section>
+        ) : null}
 
         <div className="mt-6 grid gap-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(240px,0.85fr)]">
           <TracePanel events={session.traceEvents} />
@@ -215,6 +281,7 @@ export function WorkspaceShell({
           stageKey={session.stage.key}
           sessionId={session.id}
           workspaceMode={workspaceMode}
+          surfaceMode={surfaceMode.key}
         />
 
         <section className="rounded-[30px] border border-slate-200/80 bg-white/96 p-6 shadow-[0_24px_80px_-42px_rgba(15,23,42,0.35)]">
@@ -276,6 +343,90 @@ export function WorkspaceShell({
       </aside>
     </section>
   );
+}
+
+function determineSurfaceMode(session: SessionEnvelope) {
+  const signalCount = [
+    session.memoryRiskSummary,
+    session.contextBudgetSummary,
+    session.capabilityRouteSummary,
+    session.trajectoryEvaluationSummary,
+  ].filter(Boolean).length;
+
+  if (session.stage.key === "complete" || signalCount >= 3) {
+    return {
+      key: "full" as const,
+      label: "Full inspection",
+      description:
+        "Expose the full evidence, routing, and evaluation surface because the session has enough state to justify deeper review.",
+    };
+  }
+
+  if (
+    session.stage.key === "career_intake" ||
+    session.stage.key === "blueprint_review" ||
+    session.stage.key === "draft_review" ||
+    signalCount >= 1
+  ) {
+    return {
+      key: "sidecar" as const,
+      label: "Sidecar review",
+      description:
+        "Keep the conversation central while exposing targeted controls and high-signal summaries beside the active artifact.",
+    };
+  }
+
+  return {
+    key: "micro" as const,
+    label: "Micro intervention",
+    description:
+      "Keep the workspace light until the run accumulates enough evidence or risk to justify deeper controls.",
+  };
+}
+
+function buildWorkspaceSignals(session: SessionEnvelope) {
+  const signals: Array<{ label: string; value: string; notes: string[] }> = [];
+
+  if (session.memoryRiskSummary) {
+    signals.push({
+      label: "Memory risk",
+      value: `${session.memoryRiskSummary.quarantinedItems} quarantined / ${session.memoryRiskSummary.highRiskItems} high risk`,
+      notes: session.memoryRiskSummary.notes,
+    });
+  }
+
+  if (session.contextBudgetSummary) {
+    signals.push({
+      label: "Context budget",
+      value: `${session.contextBudgetSummary.tokenBudget} tokens`,
+      notes: session.contextBudgetSummary.notes,
+    });
+  }
+
+  if (session.capabilityRouteSummary) {
+    signals.push({
+      label: "Capability route",
+      value:
+        session.capabilityRouteSummary.selectedCapability ?? "No route selected",
+      notes: session.capabilityRouteSummary.notes,
+    });
+  }
+
+  if (session.trajectoryEvaluationSummary) {
+    signals.push({
+      label: "Trajectory evaluation",
+      value: [
+        session.trajectoryEvaluationSummary.questionQuality,
+        session.trajectoryEvaluationSummary.actionEfficiency,
+        session.trajectoryEvaluationSummary.revisionEfficiency,
+      ]
+        .filter(Boolean)
+        .join(" / "),
+      notes: session.trajectoryEvaluationSummary.notes,
+    });
+  }
+
+  return signals;
 }
 
 function MetricCard({ label, value }: { label: string; value: string }) {
