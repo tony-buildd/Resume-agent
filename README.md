@@ -120,6 +120,7 @@ So the value of the repo is not only the resume product itself, but also the age
 - `apps/web` — product UI
 - `apps/api` — orchestration and persistence backend
 - `.planning/` — roadmap, requirements, phase plans, summaries, and UAT artifacts
+- `docs/` — developer onboarding, setup, architecture, and operations docs
 
 ## Current State
 
@@ -133,3 +134,9 @@ The core backend flow is already in place:
 - targeted reruns
 
 The current work is focused on making that system legible in the frontend workspace.
+
+## Developer Docs
+
+- [Local setup](/Users/minhthiennguyen/Desktop/agentic-resume-optimizer/docs/developer/local-setup.md)
+- [Environment variables](/Users/minhthiennguyen/Desktop/agentic-resume-optimizer/docs/developer/environment.md)
+- [Developer onboarding](/Users/minhthiennguyen/Desktop/agentic-resume-optimizer/docs/developer/onboarding.md)
