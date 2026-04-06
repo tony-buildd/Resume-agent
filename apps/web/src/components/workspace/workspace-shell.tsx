@@ -2,6 +2,7 @@ import type { StoryCheckpointRecord, VaultRoleRecord } from "@/lib/api/vault";
 import type { SessionEnvelope } from "@/lib/api/sessions";
 
 import { ArtifactPanel, selectActiveArtifact } from "./artifact-panel";
+import { TracePanel } from "./trace-panel";
 
 type VaultPromptSummary = {
   title: string;
@@ -161,36 +162,7 @@ export function WorkspaceShell({
         </div>
 
         <div className="mt-6 grid gap-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(240px,0.85fr)]">
-          <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_18px_45px_-36px_rgba(15,23,42,0.35)]">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-slate-950">
-                Recent trace summary
-              </h3>
-              <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-medium text-slate-600">
-                last {Math.min(session.traceEvents.length, 4)}
-              </span>
-            </div>
-            <div className="mt-4 space-y-3">
-              {session.traceEvents.slice(-4).map((event) => (
-                <article
-                  key={event.id}
-                  className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4"
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-                      {event.stage}
-                    </p>
-                    <span className="text-[11px] text-slate-500">
-                      {event.level}
-                    </span>
-                  </div>
-                  <p className="mt-2 text-sm leading-6 text-slate-800">
-                    {event.message}
-                  </p>
-                </article>
-              ))}
-            </div>
-          </section>
+          <TracePanel events={session.traceEvents} />
 
           <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_18px_45px_-36px_rgba(15,23,42,0.35)]">
             <div className="flex items-center justify-between">
