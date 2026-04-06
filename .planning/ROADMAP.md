@@ -17,7 +17,7 @@ This roadmap builds Resume Agent from project skeleton to a hardened, inspectabl
 - [x] **Phase 4: Frontend Experience** - Build the chat-first workspace with contextual panels, inline approvals, diffs, and trace views.
 - [x] **Phase 5: Ship / Polish** - Harden operations, documentation, onboarding, and release packaging for a usable MVP.
 - [x] **Phase 6: Agent Capability Integration** - Add Codex-native wrappers, bootstrap scripts, and docs for external skill ecosystems and agent tooling.
-- [ ] **Phase 7: Runtime Hardening and Memory Safety** - Split trust from safety, add interruption intents, delta replanning, and quarantine/feasibility enforcement.
+- [x] **Phase 7: Runtime Hardening and Memory Safety** - Split trust from safety, add interruption intents, delta replanning, and quarantine/feasibility enforcement.
 - [ ] **Phase 8: Hierarchical Retrieval and Context Budgeting** - Replace flat retrieval with role/story/evidence selection and budget-aware context assembly.
 - [ ] **Phase 9: Adaptive Evaluation and Review Loop** - Replace the shallow evaluator with role-aware rubrics, trajectory judgments, and replayable QA fixtures.
 - [ ] **Phase 10: Capability Routing and Research Orchestration** - Add a capability registry, API-first routing policy, and multi-pass research artifacts with citations.
@@ -147,9 +147,9 @@ Plans:
 
 Plans:
 
-- [ ] 07-01: Extend vault/session schema, typed contracts, and API payloads for memory tiers, validation state, and interruption summaries.
-- [ ] 07-02: Implement interruption-aware delta replanning and runtime transition policy.
-- [ ] 07-03: Implement feasibility/quarantine services, promotion gates, and trace visibility for memory-risk decisions.
+- [x] 07-01: Extend vault/session schema, typed contracts, and API payloads for memory tiers, validation state, and interruption summaries.
+- [x] 07-02: Implement interruption-aware delta replanning and runtime transition policy.
+- [x] 07-03: Implement feasibility/quarantine services, promotion gates, and trace visibility for memory-risk decisions.
 
 ### Phase 8: Hierarchical Retrieval and Context Budgeting
 
@@ -236,7 +236,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 4. Frontend Experience | 3/3            | Complete    | 2026-04-05 |
 | 5. Ship / Polish       | 2/2            | Complete    | 2026-04-05 |
 | 6. Agent Capability Integration | 3/3     | Complete    | 2026-04-05 |
-| 7. Runtime Hardening and Memory Safety | 0/3 | Not Started | — |
+| 7. Runtime Hardening and Memory Safety | 3/3 | Complete | 2026-04-05 |
 | 8. Hierarchical Retrieval and Context Budgeting | 0/3 | Not Started | — |
 | 9. Adaptive Evaluation and Review Loop | 0/3 | Not Started | — |
 | 10. Capability Routing and Research Orchestration | 0/3 | Not Started | — |

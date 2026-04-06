@@ -5,15 +5,15 @@
 See: .planning/PROJECT.md (updated 2026-04-05)
 
 **Core value:** Turn fragmented career context into a credible, strategically tailored one-page resume that matches a target role without hiding how the system reached its recommendations.
-**Current focus:** Runtime hardening milestone kickoff
+**Current focus:** Hierarchical retrieval milestone kickoff
 
 ## Current Position
 
-Phase: 7 of 11 (Runtime Hardening and Memory Safety)
-Plan: 07-01
+Phase: 8 of 11 (Hierarchical Retrieval and Context Budgeting)
+Plan: 08-01
 Status: In Progress
-Last activity: 2026-04-05 — Opened the hardening and evolution milestone and queued Phase 7 execution
-Progress: [█████░░░░░] 55%
+Last activity: 2026-04-05 — Completed Phase 7 runtime hardening and queued Phase 8 retrieval work
+Progress: [██████░░░░] 64%
 
 ## Performance Metrics
 
@@ -65,6 +65,8 @@ Recent decisions affecting current work:
 - Milestone 2: Preserve the working prototype while hardening runtime safety, retrieval scaling, evaluation depth, research routing, and UX controls
 - Milestone 2: Use Paper2Code-derived architecture ideas only as planning input, not direct code generation
 - Milestone 2: Keep Browser Use as a routed fallback behind internal/API/structured sources
+- Phase 7: Separate trust review state from safety state and expose replan metadata in the session envelope
+- Phase 7: Keep risky evidence available for questioning while blocking it from draft-safe retrieval
 
 ### Roadmap Evolution
 
@@ -76,8 +78,8 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-- Execute Phase 7 plans in commit-sized slices before moving deeper into retrieval, evaluation, and UX changes.
-- Carry forward the paper-review findings as acceptance checks for Phases 7-10.
+- Start Phase 8 by replacing flat role ranking with role -> story -> evidence retrieval.
+- Carry forward the paper-review findings as acceptance checks for Phases 8-10.
 
 ### Blockers/Concerns
 
@@ -86,6 +88,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-04-05 23:20
-Stopped at: Hardening milestone opened; next step is Phase 7 schema and runtime refactor
+Last session: 2026-04-06 00:35
+Stopped at: Phase 7 complete; next step is Phase 8 hierarchical retrieval and context budgeting
 Resume file: None
