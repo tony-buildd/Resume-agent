@@ -42,15 +42,15 @@ export default async function Home() {
                 </div>
               ) : (
                 <>
-                <Link
-                  href="/workspace"
-                  className="rounded-full bg-slate-950 px-4 py-3 text-sm font-medium text-slate-50"
-                >
-                  Open workspace
-                </Link>
-                <div className="rounded-full border border-slate-200 bg-white p-2">
-                  <UserButton />
-                </div>
+                  <Link
+                    href="/workspace"
+                    className="rounded-full bg-slate-950 px-4 py-3 text-sm font-medium text-slate-50"
+                  >
+                    Open workspace
+                  </Link>
+                  <div className="rounded-full border border-slate-200 bg-white p-2">
+                    <UserButton />
+                  </div>
                 </>
               )}
             </div>

@@ -4,7 +4,6 @@ import { auth, currentUser } from "@clerk/nextjs/server";
 
 import type { SessionEnvelope } from "@/lib/api/sessions";
 
-
 export interface VaultFactRecord {
   id: string;
   kind: string;
@@ -106,7 +105,6 @@ export interface VaultRetrievalResponse {
 
 const DEFAULT_API_BASE_URL = "http://127.0.0.1:8000";
 
-
 function getApiBaseUrl() {
   return (
     process.env.RESUME_AGENT_API_URL ??
@@ -114,7 +112,6 @@ function getApiBaseUrl() {
     DEFAULT_API_BASE_URL
   );
 }
-
 
 async function buildAuthHeaders() {
   const { userId } = await auth();
@@ -130,7 +127,6 @@ async function buildAuthHeaders() {
     "X-Clerk-User-Email": user?.primaryEmailAddress?.emailAddress ?? "",
   };
 }
-
 
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${getApiBaseUrl()}${path}`, {
@@ -150,11 +146,9 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   return (await response.json()) as T;
 }
 
-
 export async function listVaultRoles(): Promise<VaultRoleRecord[]> {
   return apiFetch<VaultRoleRecord[]>("/api/vault/roles");
 }
-
 
 export async function createVaultInterviewSession(input?: {
   companyName?: string;
@@ -176,7 +170,6 @@ export async function createVaultInterviewSession(input?: {
     }),
   });
 }
-
 
 export async function retrieveVaultContext(input?: {
   query?: string;

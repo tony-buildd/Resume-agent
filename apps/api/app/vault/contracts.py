@@ -113,7 +113,9 @@ class VaultProjectStoryRecord(BaseModel):
     draft_eligible: bool = Field(alias="draftEligible")
     details: dict[str, object]
     facts: list[VaultFactRecord]
-    bullet_candidates: list[VaultBulletCandidateRecord] = Field(alias="bulletCandidates")
+    bullet_candidates: list[VaultBulletCandidateRecord] = Field(
+        alias="bulletCandidates"
+    )
     created_at: datetime = Field(alias="createdAt")
     updated_at: datetime = Field(alias="updatedAt")
 

@@ -3,6 +3,7 @@
 Resume Agent is an agentic resume operating system, not a one-shot resume generator.
 
 The goal is to help a candidate build a role-specific resume by forcing the system to do the hard work that normal AI tools usually skip:
+
 - understand the job description deeply
 - understand what the company is actually hiring for
 - recover missing technical and impact details from the candidate's past work
@@ -14,6 +15,7 @@ The goal is to help a candidate build a role-specific resume by forcing the syst
 Most AI resume tools make resumes worse, not better.
 
 They usually take a job description and an existing resume, then rewrite the text in one pass. That creates a few common failures:
+
 - they smooth the writing but lose the real technical depth
 - they compress complex projects into generic bullets
 - they have no durable memory of the candidate's actual work
@@ -29,6 +31,7 @@ A strong resume is not just "better writing." It is a strategic document. To pro
 Resume Agent is designed as a strict multi-stage system with visible reasoning and human checkpoints.
 
 Instead of asking the model to rewrite everything at once, the product breaks the work into explicit stages:
+
 - JD analysis
 - company and role research
 - gap interrogation
@@ -52,6 +55,7 @@ Resume Agent assumes the resume is incomplete. It actively interrogates the user
 Most resume tools only keep the latest output.
 
 Resume Agent stores:
+
 - canonical career facts
 - project stories
 - provenance
@@ -66,6 +70,7 @@ That means the system can reuse strong material over time instead of starting fr
 Most AI JD-based resume tools jump straight from job description to rewritten bullets.
 
 Resume Agent forces a strategist step before drafting. The system must decide:
+
 - which roles survive the one-page budget
 - which project threads matter
 - which bullets should lead
@@ -91,6 +96,7 @@ Resume Agent treats the job description as the customer. The output is judged by
 This project is also intentionally a learning vehicle for agentic systems.
 
 The product is being built to explore:
+
 - multi-stage agent orchestration
 - human-in-the-loop approval boundaries
 - long-term semantic + structured memory
@@ -118,6 +124,7 @@ So the value of the repo is not only the resume product itself, but also the age
 ## Current State
 
 The core backend flow is already in place:
+
 - JD analysis and research
 - one-question interrogation
 - narrative blueprinting

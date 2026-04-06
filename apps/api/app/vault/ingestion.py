@@ -15,7 +15,6 @@ from app.vault.contracts import (
     VaultRoleRecord,
 )
 
-
 SENTENCE_SPLIT_RE = re.compile(r"(?<=[.!?])\s+|\n+")
 
 
@@ -60,19 +59,21 @@ def build_seed_import_request(payload: SeedImportRequest) -> CreateVaultRoleRequ
             )
             for index, statement in enumerate(notes[4:8], start=1)
         ],
-        bulletCandidates=[
-            VaultBulletCandidateInput(
-                text=notes[0],
-                storyAngle="seed_import",
-                sourceType=VaultSourceType.SEED_MATERIAL,
-                reviewState=VaultReviewState.USER_STATED,
-                draftEligible=True,
-                supportingFactClientKeys=["seed-fact-1"] if role_facts else [],
-                details={"origin": "seed_import"},
-            )
-        ]
-        if notes
-        else [],
+        bulletCandidates=(
+            [
+                VaultBulletCandidateInput(
+                    text=notes[0],
+                    storyAngle="seed_import",
+                    sourceType=VaultSourceType.SEED_MATERIAL,
+                    reviewState=VaultReviewState.USER_STATED,
+                    draftEligible=True,
+                    supportingFactClientKeys=["seed-fact-1"] if role_facts else [],
+                    details={"origin": "seed_import"},
+                )
+            ]
+            if notes
+            else []
+        ),
     )
 
     return CreateVaultRoleRequest(
@@ -118,19 +119,21 @@ def build_guided_capture_request(
             )
             for index, statement in enumerate(details, start=1)
         ],
-        bulletCandidates=[
-            VaultBulletCandidateInput(
-                text=details[0],
-                storyAngle="guided_capture",
-                sourceType=VaultSourceType.AGENT_INFERENCE,
-                reviewState=VaultReviewState.INFERRED,
-                draftEligible=False,
-                supportingFactClientKeys=["guided-fact-1"] if details else [],
-                details={"origin": "guided_capture"},
-            )
-        ]
-        if details
-        else [],
+        bulletCandidates=(
+            [
+                VaultBulletCandidateInput(
+                    text=details[0],
+                    storyAngle="guided_capture",
+                    sourceType=VaultSourceType.AGENT_INFERENCE,
+                    reviewState=VaultReviewState.INFERRED,
+                    draftEligible=False,
+                    supportingFactClientKeys=["guided-fact-1"] if details else [],
+                    details={"origin": "guided_capture"},
+                )
+            ]
+            if details
+            else []
+        ),
     )
 
     return CreateVaultRoleRequest(
@@ -174,14 +177,17 @@ def build_checkpoint(mode: str, role: VaultRoleRecord) -> StoryCheckpointRecord:
         pendingReviewFacts=sum(
             1
             for item in facts
-            if item.review_state in {VaultReviewState.INFERRED, VaultReviewState.USER_STATED}
+            if item.review_state
+            in {VaultReviewState.INFERRED, VaultReviewState.USER_STATED}
         ),
         suggestedNextQuestion=next_question,
         missingSignals=missing_signals,
     )
 
 
-def build_ingestion_response(mode: str, role: VaultRoleRecord) -> VaultIngestionResponse:
+def build_ingestion_response(
+    mode: str, role: VaultRoleRecord
+) -> VaultIngestionResponse:
     return VaultIngestionResponse(
         mode=mode,
         role=role,

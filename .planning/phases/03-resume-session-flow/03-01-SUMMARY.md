@@ -2,7 +2,8 @@
 phase: 03-resume-session-flow
 plan: 01
 subsystem: jd-analysis
-tags: [resume-session, openai, responses-api, jd-analysis, research, approval-gate]
+tags:
+  [resume-session, openai, responses-api, jd-analysis, research, approval-gate]
 requires:
   - phase: 01-foundations
     provides: session runtime, typed artifacts, auth boundary
@@ -58,6 +59,7 @@ completed: 2026-04-06
 - **Files modified:** 10
 
 ## Accomplishments
+
 - Added OpenAI provider configuration plus a thin Responses API adapter for structured outputs and optional raw response metadata.
 - Added a JD analysis/research service that can use OpenAI when available and fall back to deterministic heuristics when provider access fails.
 - Extended the main session runtime so JD submission produces `jd-analysis` and `research-summary` artifacts, pauses for approval, and only then moves to `career_intake`.
@@ -71,6 +73,7 @@ Each task was committed atomically:
 3. **Task 3: Attach JD analysis approval to the runtime** - `a1a01da`, `7e8447c`, `f837a66`, `4c90fd4` (feat/fix/chore/docs)
 
 ## Files Created/Modified
+
 - `apps/api/pyproject.toml` - Added OpenAI SDK dependency
 - `apps/api/app/config.py` - Added OpenAI provider settings
 - `apps/api/app/llm/openai_client.py` - Responses API adapter and strict schema normalization
@@ -82,6 +85,7 @@ Each task was committed atomically:
 - `.env.example` - Added OpenAI env settings
 
 ## Decisions Made
+
 - Treated the JD-analysis approval boundary as a first-class runtime stage instead of hiding it inside `jd_intake`.
 - Stored the structured JD analysis and the strategic research summary as separate artifacts so the workspace can later render them independently.
 - Left the provider path resilient: missing key, inaccessible model, or schema mismatch now degrade to heuristics rather than hard-failing the user session.
@@ -91,6 +95,7 @@ Each task was committed atomically:
 ### Auto-fixed Issues
 
 **1. OpenAI strict JSON schema requirements rejected raw Pydantic schemas**
+
 - **Found during:** API-level JD flow verification
 - **Issue:** The Responses API rejected the structured-output schema because nested object nodes were missing `additionalProperties: false`.
 - **Fix:** Normalized JSON schemas in the OpenAI adapter before sending them to the API.
@@ -98,6 +103,7 @@ Each task was committed atomically:
 - **Verification:** Reran the JD session lifecycle check after the adapter fix
 
 **2. The configured OpenAI project key could not access `gpt-5.2`**
+
 - **Found during:** API-level JD flow verification
 - **Issue:** Provider calls returned `model_not_found` / permission errors for the configured model.
 - **Fix:** Hardened the JD research service to catch provider failures and fall back to deterministic heuristics.
@@ -105,6 +111,7 @@ Each task was committed atomically:
 - **Verification:** End-to-end JD session lifecycle completed successfully without provider hard failure
 
 **3. JD-analysis artifacts were not persisting their approved status**
+
 - **Found during:** JD approval lifecycle verification
 - **Issue:** The session advanced, but the `jd-analysis` and `research-summary` artifacts stayed `candidate`.
 - **Fix:** Approved the stage/kind artifacts directly instead of relying on cached runtime artifact IDs.
@@ -117,6 +124,7 @@ Each task was committed atomically:
 **Impact on plan:** No scope change. All fixes were required to make the approval gate and provider layer production-safe.
 
 ## Issues Encountered
+
 - Local verification revealed a real provider-access mismatch: the environment had an OpenAI key available, but not access to the configured default model.
 
 ## User Setup Required
@@ -137,9 +145,11 @@ Each task was committed atomically:
   - confirm transition to `career_intake`
 
 ## Next Phase Readiness
+
 - `03-02` can now build interrogation and canonical session edits on top of approved JD analysis artifacts instead of raw job-description text.
 - The workspace already has enough contract surface to render JD analysis and research artifacts later in Phase 4.
 
 ---
-*Phase: 03-resume-session-flow*
-*Completed: 2026-04-06*
+
+_Phase: 03-resume-session-flow_
+_Completed: 2026-04-06_

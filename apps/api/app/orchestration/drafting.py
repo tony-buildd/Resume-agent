@@ -51,7 +51,8 @@ def build_markdown_resume(
         blueprint.narrative_angle,
         "",
         "## Skills",
-        ", ".join(format_term(item) for item in blueprint.skills_focus) or "Add validated skills here.",
+        ", ".join(format_term(item) for item in blueprint.skills_focus)
+        or "Add validated skills here.",
         "",
         "## Experience",
     ]
@@ -183,4 +184,6 @@ def should_highlight_term(term: str) -> bool:
     normalized = term.strip()
     if not normalized:
         return False
-    return bool(re.search(r"[0-9]|[A-Z]{2,}", normalized)) or len(normalized.split()) <= 2
+    return (
+        bool(re.search(r"[0-9]|[A-Z]{2,}", normalized)) or len(normalized.split()) <= 2
+    )

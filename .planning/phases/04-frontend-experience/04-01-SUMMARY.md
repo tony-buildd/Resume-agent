@@ -51,6 +51,7 @@ completed: 2026-04-05
 - **Files modified:** 4
 
 ## Accomplishments
+
 - Replaced the old two-column diagnostic page with a chat-centered shell that foregrounds the active stage and conversation turn.
 - Added a contextual artifact panel that selects the most relevant artifact by stage and renders key artifact kinds with bespoke cards.
 - Preserved both resume and vault modes while making the workspace feel more intentional and less like an internal inspector.
@@ -64,6 +65,7 @@ Each task was committed atomically:
 2. **Task 2: Add kind-aware artifact panel rendering** - `9bf0fa3` (feat)
 
 ## Files Created/Modified
+
 - `apps/web/src/components/workspace/workspace-shell.tsx` - Chat-centered workspace structure
 - `apps/web/src/components/workspace/artifact-panel.tsx` - Stage-aware artifact selection and kind-aware rendering
 - `apps/web/src/app/(workspace)/workspace/page.tsx` - Simplified route-level data loading
@@ -76,9 +78,11 @@ Each task was committed atomically:
 - `pnpm lint:web`
 
 ## Next Phase Readiness
+
 - `04-02` can add inline review actions and diffs on top of the new artifact-panel architecture.
 - The shell now has a clear place to mount active-stage controls without reworking page structure again.
 
 ---
-*Phase: 04-frontend-experience*
-*Completed: 2026-04-05*
+
+_Phase: 04-frontend-experience_
+_Completed: 2026-04-05_

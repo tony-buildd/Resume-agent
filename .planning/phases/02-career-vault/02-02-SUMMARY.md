@@ -13,7 +13,12 @@ provides:
 affects: [phase-2, phase-3, runtime, workspace]
 tech-stack:
   added: [vault-ingestion-runtime, vault-workspace-client]
-  patterns: [single-story capture, checkpoint-before-persist, vault-mode session bootstrap]
+  patterns:
+    [
+      single-story capture,
+      checkpoint-before-persist,
+      vault-mode session bootstrap,
+    ]
 key-files:
   created: [apps/web/src/lib/api/vault.ts]
   modified:
@@ -51,6 +56,7 @@ completed: 2026-04-05
 - **Files modified:** 7
 
 ## Accomplishments
+
 - Added seed import, guided role capture, and typed checkpoint response contracts for focused single-story vault ingestion.
 - Attached vault ingestion to resumable session runtime boundaries so prompts, interruptions, approvals, and persistence share one shell.
 - Added a small workspace client and vault-aware workspace page that can bootstrap a vault session, surface prompt/checkpoint state, and show canonical vault roles.
@@ -64,6 +70,7 @@ Each task was committed atomically:
 3. **Task 3: Add minimal workspace support for vault ingestion** - `1b0e4c6`, `e45532e`, `8bbaf66` (feat/chore)
 
 ## Files Created/Modified
+
 - `apps/api/app/vault/contracts.py` - Ingestion/session request and checkpoint response contracts
 - `apps/api/app/vault/ingestion.py` - Seed import, guided capture, checkpoint, and statement extraction helpers
 - `apps/api/app/api/routes/vault.py` - Vault import/interview routes and vault interview session endpoints
@@ -74,6 +81,7 @@ Each task was committed atomically:
 - `apps/web/src/lib/api/sessions.ts` - Frontend stage keys updated for vault runtime stages
 
 ## Decisions Made
+
 - Used `?mode=vault` as the smallest useful entrypoint for vault session bootstrapping in the existing workspace route.
 - Treated the checkpoint artifact as the canonical review surface for now, rather than inventing a separate vault review page in this phase.
 - Listed canonical roles alongside the current session so the workspace proves long-term memory and in-flight capture can coexist.
@@ -83,6 +91,7 @@ Each task was committed atomically:
 ### Auto-fixed Issues
 
 **1. Frontend typecheck picked up stale `.next` type artifacts after an accidental duplicate page filename**
+
 - **Found during:** Web verification after the workspace page change
 - **Issue:** `pnpm typecheck:web` initially referenced generated `.next/types/* 2.ts` paths from a stray duplicate file that had already been removed.
 - **Fix:** Removed the duplicate source file, let `next build` regenerate current types, and reran the standalone typecheck successfully.
@@ -95,6 +104,7 @@ Each task was committed atomically:
 **Impact on plan:** No scope change. The implementation plan stayed intact.
 
 ## Issues Encountered
+
 - The frontend session type union lagged behind the new backend vault stages and needed a small contract update before the vault-aware page could stay typed.
 
 ## User Setup Required
@@ -102,9 +112,11 @@ Each task was committed atomically:
 None - the existing Phase 1 Clerk and Neon configuration was sufficient for this plan.
 
 ## Next Phase Readiness
+
 - `02-03` can now implement retrieval and eligibility rules on top of canonical vault entities, explicit review states, and visible vault session artifacts.
 - Phase 3 can later reuse the same session/artifact structure when resume-stage agents query approved vault memory.
 
 ---
-*Phase: 02-career-vault*
-*Completed: 2026-04-05*
+
+_Phase: 02-career-vault_
+_Completed: 2026-04-05_

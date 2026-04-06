@@ -2,7 +2,8 @@
 phase: 03-resume-session-flow
 plan: 02
 subsystem: interrogation
-tags: [resume-session, interrogation, canonical-context, vault-retrieval, runtime]
+tags:
+  [resume-session, interrogation, canonical-context, vault-retrieval, runtime]
 requires:
   - phase: 03-resume-session-flow
     provides: approved JD analysis and research artifacts
@@ -13,7 +14,12 @@ provides:
 affects: [phase-3, runtime, interrogation, canonical-state]
 tech-stack:
   added: [interrogation-service, canonical-session-context]
-  patterns: [single-gap-question, vault-informed-questioning, canonical-answer-persistence]
+  patterns:
+    [
+      single-gap-question,
+      vault-informed-questioning,
+      canonical-answer-persistence,
+    ]
 key-files:
   created: [apps/api/app/orchestration/interrogation.py]
   modified:
@@ -46,6 +52,7 @@ completed: 2026-04-06
 - **Files modified:** 3
 
 ## Accomplishments
+
 - Added a typed interrogation prompt contract and a gap-selection service that reads JD analysis, research summary, and questioning-safe vault retrieval.
 - Replaced the generic `career_intake` question with a single highest-impact interrogation prompt that explains why the missing signal matters.
 - Persisted user answers into a canonical `session-context` artifact and runtime snapshot so later stages can treat them as stable downstream truth.
@@ -58,11 +65,13 @@ Each task was committed atomically:
 2. **Task 2: Persist canonical user edits and approvals** - `51b95e1` (feat)
 
 ## Files Created/Modified
+
 - `apps/api/app/orchestration/contracts.py` - Typed interrogation prompt contract
 - `apps/api/app/orchestration/interrogation.py` - Gap-selection and canonical-context helpers
 - `apps/api/app/orchestration/runtime.py` - Vault-informed question generation and canonical session-context persistence
 
 ## Decisions Made
+
 - Used the weakest-covered top JD requirement as the interrogation target instead of asking for a generic “most relevant experience.”
 - Treated the user’s answer as canonical session context immediately, rather than waiting for a later editing UI phase.
 - Kept the output narrow: one active question, one canonical context artifact, then move to blueprinting.
@@ -72,6 +81,7 @@ Each task was committed atomically:
 ### Auto-fixed Issues
 
 **1. Initial verification payload used an invalid vault `sourceType`**
+
 - **Found during:** API-level interrogation verification
 - **Issue:** The test seed data used `approved` as a source type, which is a review state, not a provenance enum.
 - **Fix:** Corrected the verification payload to use a valid source type and re-ran the flow.
@@ -95,9 +105,11 @@ Each task was committed atomically:
   - confirm `session-context` artifact stores canonical answer keys
 
 ## Next Phase Readiness
+
 - `03-03` can now generate the narrative blueprint from approved JD analysis plus canonical session context instead of relying on raw answers.
 - Later UI work can render interrogation question rationale and canonical context without changing backend contracts.
 
 ---
-*Phase: 03-resume-session-flow*
-*Completed: 2026-04-06*
+
+_Phase: 03-resume-session-flow_
+_Completed: 2026-04-06_

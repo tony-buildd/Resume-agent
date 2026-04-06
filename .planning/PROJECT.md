@@ -31,6 +31,7 @@ Turn fragmented career context into a credible, strategically tailored one-page 
 The product exists because generic chat tools often make resumes worse by simplifying away architecture depth, impact signals, and candidate personality. The user wants the system to act like a resume strategist and agentic harness, not a single-prompt copy editor. The repository should be run through GSD as the primary operating system, with explicit phase discussion, planning, execution, verification, and frequent commits.
 
 The current product direction is:
+
 - `Next.js` frontend with a chat-centered workspace and contextual side panels
 - `FastAPI + LangGraph` backend with strict stage contracts
 - `Clerk` authentication for individual users
@@ -46,21 +47,22 @@ The current product direction is:
 
 ## Key Decisions
 
-| Decision | Rationale | Outcome |
-|----------|-----------|---------|
-| Use `FastAPI + LangGraph` for orchestration | The product is explicitly about learning agent harness design in Python | — Pending |
-| Use `Next.js` for the frontend | A modern web app fits the chat workspace and artifact panel UX better than Streamlit | — Pending |
-| Use `Clerk` for MVP auth | The first user shape is individual candidates, not enterprise orgs | — Pending |
-| Use `Postgres + ChromaDB` | App state needs a relational source of truth; semantic retrieval is secondary memory infrastructure | — Pending |
-| Keep top-level agents behind strict typed stage contracts | The product should teach controllable agent systems, not opaque agent swarms | — Pending |
-| Use GSD as the default project OS | The user wants phase-by-phase planning, execution, verification, and explicit skill usage | — Pending |
-| Perform a skill audit at the start of each phase | The project should deliberately use relevant GSD and non-GSD skills without forcing irrelevant ones | — Pending |
+| Decision                                                  | Rationale                                                                                           | Outcome   |
+| --------------------------------------------------------- | --------------------------------------------------------------------------------------------------- | --------- |
+| Use `FastAPI + LangGraph` for orchestration               | The product is explicitly about learning agent harness design in Python                             | — Pending |
+| Use `Next.js` for the frontend                            | A modern web app fits the chat workspace and artifact panel UX better than Streamlit                | — Pending |
+| Use `Clerk` for MVP auth                                  | The first user shape is individual candidates, not enterprise orgs                                  | — Pending |
+| Use `Postgres + ChromaDB`                                 | App state needs a relational source of truth; semantic retrieval is secondary memory infrastructure | — Pending |
+| Keep top-level agents behind strict typed stage contracts | The product should teach controllable agent systems, not opaque agent swarms                        | — Pending |
+| Use GSD as the default project OS                         | The user wants phase-by-phase planning, execution, verification, and explicit skill usage           | — Pending |
+| Perform a skill audit at the start of each phase          | The project should deliberately use relevant GSD and non-GSD skills without forcing irrelevant ones | — Pending |
 
 ## Evolution
 
 This document evolves at phase transitions and milestone boundaries.
 
 **After each phase transition** (via `$gsd-transition`):
+
 1. Requirements invalidated? -> Move to Out of Scope with reason
 2. Requirements validated? -> Move to Validated with phase reference
 3. New requirements emerged? -> Add to Active
@@ -68,10 +70,12 @@ This document evolves at phase transitions and milestone boundaries.
 5. "What This Is" still accurate? -> Update if drifted
 
 **After each milestone** (via `$gsd-complete-milestone`):
+
 1. Full review of all sections
 2. Core Value check -> still the right priority?
 3. Audit Out of Scope -> reasons still valid?
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-05 after initialization*
+
+_Last updated: 2026-04-05 after initialization_

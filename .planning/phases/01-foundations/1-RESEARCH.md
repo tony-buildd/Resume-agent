@@ -11,6 +11,7 @@ Phase 1 should optimize for clean boundaries and future-proof contracts, not pol
 ## Recommended Phase Approach
 
 ### Repo / app topology
+
 - Use a repo layout with clear app boundaries:
   - `apps/web` for the Next.js workspace
   - `apps/api` for the FastAPI service
@@ -18,6 +19,7 @@ Phase 1 should optimize for clean boundaries and future-proof contracts, not pol
 - Prefer simple root tooling over premature monorepo complexity. The foundation phase should create a structure that future plans can extend without forcing build-system rewrites.
 
 ### Backend foundation
+
 - Start the API with clear service boundaries:
   - auth/session access layer
   - persistence layer
@@ -25,6 +27,7 @@ Phase 1 should optimize for clean boundaries and future-proof contracts, not pol
 - Define typed artifact/state models up front so later phases can plug in JD analysis, vault retrieval, blueprinting, and evaluator stages.
 
 ### Persistence baseline
+
 - Use Postgres-backed entities for:
   - user profile linkage
   - sessions
@@ -34,6 +37,7 @@ Phase 1 should optimize for clean boundaries and future-proof contracts, not pol
 - Keep Chroma out of Phase 1 implementation details except for configuration and service boundaries; actual semantic retrieval belongs in Phase 2.
 
 ### Frontend baseline
+
 - The first UI should prove:
   - authenticated workspace access
   - session shell rendering
@@ -45,25 +49,25 @@ Phase 1 should optimize for clean boundaries and future-proof contracts, not pol
 
 ### GSD Skills
 
-| Skill | Decision | Why |
-|-------|----------|-----|
-| `gsd-discuss-phase` | Used | Phase context was needed before planning |
-| `gsd-plan-phase` | Used | This phase needs executable plan artifacts |
-| `gsd-execute-phase` | Deferred | Use after the plan files are ready |
-| `gsd-verify-work` | Deferred | Use after implementation exists |
-| `gsd-add-tests` | Deferred | Phase 1 tests should be generated after implementation lands |
-| `gsd-progress` | Available | Useful for later routing, but not required to author these artifacts |
-| `gsd-next` | Available | Useful after planning/execution checkpoints |
-| `gsd-new-project` | Used | Required because the repo had no `.planning/` scaffold |
+| Skill               | Decision  | Why                                                                  |
+| ------------------- | --------- | -------------------------------------------------------------------- |
+| `gsd-discuss-phase` | Used      | Phase context was needed before planning                             |
+| `gsd-plan-phase`    | Used      | This phase needs executable plan artifacts                           |
+| `gsd-execute-phase` | Deferred  | Use after the plan files are ready                                   |
+| `gsd-verify-work`   | Deferred  | Use after implementation exists                                      |
+| `gsd-add-tests`     | Deferred  | Phase 1 tests should be generated after implementation lands         |
+| `gsd-progress`      | Available | Useful for later routing, but not required to author these artifacts |
+| `gsd-next`          | Available | Useful after planning/execution checkpoints                          |
+| `gsd-new-project`   | Used      | Required because the repo had no `.planning/` scaffold               |
 
 ### Non-GSD Skills
 
-| Skill | Decision | Why |
-|-------|----------|-----|
-| `brainstorming` | Already satisfied | Product design and tradeoffs were discussed in detail before execution |
-| `frontend-design` | Deferred | Full UI treatment belongs in Phase 4, not the foundation shell |
-| `vercel-react-best-practices` | Deferred | Becomes relevant when real React components land |
-| `openai-docs` | Skipped for now | Phase 1 is mostly structure and infra, not current OpenAI API integration details |
+| Skill                         | Decision          | Why                                                                               |
+| ----------------------------- | ----------------- | --------------------------------------------------------------------------------- |
+| `brainstorming`               | Already satisfied | Product design and tradeoffs were discussed in detail before execution            |
+| `frontend-design`             | Deferred          | Full UI treatment belongs in Phase 4, not the foundation shell                    |
+| `vercel-react-best-practices` | Deferred          | Becomes relevant when real React components land                                  |
+| `openai-docs`                 | Skipped for now   | Phase 1 is mostly structure and infra, not current OpenAI API integration details |
 
 ## Risks To Address In Planning
 
@@ -79,4 +83,5 @@ Phase 1 should optimize for clean boundaries and future-proof contracts, not pol
 - Plan 3 should establish orchestration contracts, session APIs, and the trace/event model.
 
 ---
-*Phase research completed: 2026-04-05*
+
+_Phase research completed: 2026-04-05_

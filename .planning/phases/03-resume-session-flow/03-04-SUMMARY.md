@@ -51,6 +51,7 @@ completed: 2026-04-05
 - **Files modified:** 4
 
 ## Accomplishments
+
 - Added typed evaluation scorecards covering fit, evidence support, specificity, and overstatement risk.
 - Changed `draft_review` from an auto-complete boundary into a review gate that persists both the draft package and evaluator scorecard.
 - Added targeted revision routing so a draft-review revision request jumps back to the earliest affected stage and records the reason in trace history.
@@ -64,12 +65,14 @@ Each task was committed atomically:
 2. **Task 2: Add earliest-stage rerun routing** - `6e9143b` (feat)
 
 ## Files Created/Modified
+
 - `apps/api/app/orchestration/contracts.py` - Draft-review controls and evaluation scorecard contracts
 - `apps/api/app/orchestration/evaluation.py` - Heuristic scoring for fit, evidence, specificity, and overstatement risk
 - `apps/api/app/orchestration/runtime.py` - Draft-review interrupt gate and targeted rerun routing
 - `apps/api/app/api/routes/sessions.py` - API forwarding for accept/revision flags
 
 ## Decisions Made
+
 - Evaluation remains deterministic for now so revision routing stays predictable and testable.
 - A revision request now prefers `career_intake` when the draft is missing supporting evidence, and `blueprint_review` when the story selection/specificity is the weaker link.
 - The runtime immediately pauses after generating the scorecard so later UI work can render the review state without changing orchestration semantics.
@@ -79,6 +82,7 @@ Each task was committed atomically:
 ### Auto-fixed Issues
 
 **1. Revision-flow verification originally assumed a custom transition string**
+
 - **Found during:** API-level rerun verification
 - **Issue:** The runtime correctly rerouted to `career_intake` and immediately interrupted there, so the response transition reflected the interruption message rather than a synthetic rerun string.
 - **Fix:** Updated the verification expectations to assert the new stage and rerun trace event instead of relying on a transition string.
@@ -102,9 +106,11 @@ Each task was committed atomically:
   - confirm trace history includes `rerunTarget`
 
 ## Next Phase Readiness
+
 - Phase 3 is now complete and ready for a phase-level UAT closeout.
 - Phase 4 can build the visible review UI on top of stable `blueprint`, `draft-package`, and `evaluation-scorecard` artifacts.
 
 ---
-*Phase: 03-resume-session-flow*
-*Completed: 2026-04-05*
+
+_Phase: 03-resume-session-flow_
+_Completed: 2026-04-05_

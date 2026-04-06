@@ -127,7 +127,9 @@ class SessionRecord(TimestampMixin, Base):
         default=SessionStatus.DRAFT,
     )
     title: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    state_snapshot: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)
+    state_snapshot: Mapped[dict[str, Any]] = mapped_column(
+        JSON, default=dict, nullable=False
+    )
 
     user: Mapped[AppUser] = relationship(back_populates="sessions")
     artifacts: Mapped[list["ArtifactRecord"]] = relationship(
@@ -309,7 +311,9 @@ class VaultFact(TimestampMixin, Base):
     details: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)
 
     role: Mapped[VaultRole] = relationship(back_populates="facts")
-    project_story: Mapped[VaultProjectStory | None] = relationship(back_populates="facts")
+    project_story: Mapped[VaultProjectStory | None] = relationship(
+        back_populates="facts"
+    )
     bullet_candidates: Mapped[list["VaultBulletCandidate"]] = relationship(
         secondary=bullet_candidate_fact_links,
         back_populates="supporting_facts",

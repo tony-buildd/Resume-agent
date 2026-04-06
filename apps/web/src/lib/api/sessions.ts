@@ -2,7 +2,6 @@ import "server-only";
 
 import { auth, currentUser } from "@clerk/nextjs/server";
 
-
 export type StageKey =
   | "bootstrap"
   | "vault_seed_import"
@@ -80,7 +79,6 @@ export interface AdvanceSessionPayload {
 
 const DEFAULT_API_BASE_URL = "http://127.0.0.1:8000";
 
-
 function getApiBaseUrl() {
   return (
     process.env.RESUME_AGENT_API_URL ??
@@ -88,7 +86,6 @@ function getApiBaseUrl() {
     DEFAULT_API_BASE_URL
   );
 }
-
 
 async function buildAuthHeaders() {
   const { userId } = await auth();
@@ -104,7 +101,6 @@ async function buildAuthHeaders() {
     "X-Clerk-User-Email": user?.primaryEmailAddress?.emailAddress ?? "",
   };
 }
-
 
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${getApiBaseUrl()}${path}`, {
@@ -124,8 +120,9 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   return (await response.json()) as T;
 }
 
-
-export async function createSession(title = "Workspace bootstrap"): Promise<SessionEnvelope> {
+export async function createSession(
+  title = "Workspace bootstrap",
+): Promise<SessionEnvelope> {
   return apiFetch<SessionEnvelope>("/api/sessions", {
     method: "POST",
     body: JSON.stringify({
@@ -135,18 +132,19 @@ export async function createSession(title = "Workspace bootstrap"): Promise<Sess
   });
 }
 
-
 export async function getSession(sessionId: string): Promise<SessionEnvelope> {
   return apiFetch<SessionEnvelope>(`/api/sessions/${sessionId}`);
 }
-
 
 export async function advanceSession(
   sessionId: string,
   payload: AdvanceSessionPayload,
 ): Promise<AdvanceSessionResponse> {
-  return apiFetch<AdvanceSessionResponse>(`/api/sessions/${sessionId}/advance`, {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
+  return apiFetch<AdvanceSessionResponse>(
+    `/api/sessions/${sessionId}/advance`,
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+  );
 }

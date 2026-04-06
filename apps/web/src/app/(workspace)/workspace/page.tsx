@@ -8,7 +8,6 @@ import {
   type StoryCheckpointRecord,
 } from "@/lib/api/vault";
 
-
 type WorkspacePageProps = {
   searchParams: Promise<{
     mode?: string;
@@ -29,7 +28,6 @@ type WorkspaceState =
       kind: "error";
       message: string;
     };
-
 
 export default async function WorkspacePage({
   searchParams,
@@ -53,8 +51,8 @@ export default async function WorkspacePage({
           {workspaceState.message}
         </p>
         <p className="mt-4 text-sm leading-7 text-rose-900/80">
-          Verify Clerk env vars, `RESUME_AGENT_API_URL`, and `DATABASE_URL`, then
-          reload the workspace.
+          Verify Clerk env vars, `RESUME_AGENT_API_URL`, and `DATABASE_URL`,
+          then reload the workspace.
         </p>
       </section>
     );
@@ -73,11 +71,9 @@ export default async function WorkspacePage({
   );
 }
 
-
 function parseWorkspaceMode(mode: string | undefined): WorkspaceMode {
   return mode === "vault" ? "vault" : "resume";
 }
-
 
 async function loadWorkspaceState(
   sessionId: string | undefined,
@@ -116,7 +112,6 @@ async function loadWorkspaceState(
   }
 }
 
-
 function readVaultPrompt(
   artifacts: Awaited<ReturnType<typeof getSession>>["artifacts"],
 ) {
@@ -127,7 +122,9 @@ function readVaultPrompt(
   }
 
   const prompt =
-    typeof artifact.payload.prompt === "string" ? artifact.payload.prompt : null;
+    typeof artifact.payload.prompt === "string"
+      ? artifact.payload.prompt
+      : null;
 
   if (!prompt) {
     return null;
@@ -139,7 +136,6 @@ function readVaultPrompt(
     prompt,
   };
 }
-
 
 function readVaultCheckpoint(
   artifacts: Awaited<ReturnType<typeof getSession>>["artifacts"],

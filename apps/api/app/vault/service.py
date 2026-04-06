@@ -93,7 +93,9 @@ def create_vault_role_tree(
 
 def list_vault_roles(db: Session, *, user: AppUser) -> list[VaultRole]:
     records = db.scalars(
-        base_vault_role_query().join(VaultCompany).where(VaultCompany.user_id == user.id)
+        base_vault_role_query()
+        .join(VaultCompany)
+        .where(VaultCompany.user_id == user.id)
     )
     return list(records)
 
@@ -113,9 +115,7 @@ def base_vault_role_query() -> Select[VaultRole]:
 
 
 def serialize_vault_role(record: VaultRole) -> VaultRoleRecord:
-    role_level_facts = [
-        item for item in record.facts if item.project_story_id is None
-    ]
+    role_level_facts = [item for item in record.facts if item.project_story_id is None]
     role_level_bullets = [
         item for item in record.bullet_candidates if item.project_story_id is None
     ]

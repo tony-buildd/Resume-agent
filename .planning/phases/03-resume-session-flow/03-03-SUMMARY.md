@@ -51,6 +51,7 @@ completed: 2026-04-05
 - **Files modified:** 5
 
 ## Accomplishments
+
 - Added typed blueprint and draft-package contracts so the orchestration runtime can pass structured strategist/writer outputs instead of placeholder payloads.
 - Built a deterministic blueprinting service that ranks draft-safe vault evidence against the approved JD and selects a one-page role and bullet budget.
 - Added a drafting service that emits a markdown resume, interview talking points, and concern-handling notes from the approved blueprint.
@@ -64,12 +65,14 @@ Each task was committed atomically:
 2. **Task 2: Add draft package assembly and runtime wiring** - `b67949b`, `49fded8` (feat)
 
 ## Files Created/Modified
+
 - `apps/api/app/orchestration/contracts.py` - Typed blueprint and draft-package records
 - `apps/api/app/orchestration/blueprint.py` - Draft-safe strategist selection and one-page blueprint generation
 - `apps/api/app/orchestration/drafting.py` - Markdown resume and interview-notes package assembly
 - `apps/api/app/orchestration/runtime.py` - Blueprint approval gate and final package generation
 
 ## Decisions Made
+
 - Kept blueprint selection deterministic for now so the runtime remains inspectable even when provider access is degraded.
 - Limited strategist input to approved JD context plus draft-safe vault evidence to preserve the project’s truth boundary.
 - Stored the final writer output as one package artifact because later evaluation can score a single coherent payload.
@@ -79,6 +82,7 @@ Each task was committed atomically:
 ### Auto-fixed Issues
 
 **1. Initial verification script referenced non-existent helper modules**
+
 - **Found during:** API-level end-to-end verification
 - **Issue:** The first local verification script used paths that are not present in this repo (`app.users`, `app.api.auth`).
 - **Fix:** Reworked the verification harness to import the actual session auth/user helpers from `apps/api/app/api/routes/sessions.py`.
@@ -106,9 +110,11 @@ Each task was committed atomically:
   - confirm session completes after package generation
 
 ## Next Phase Readiness
+
 - `03-04` can now score a concrete draft package instead of a placeholder artifact.
 - Targeted reruns can attach to real blueprint and draft artifacts without redefining strategist/writer contracts.
 
 ---
-*Phase: 03-resume-session-flow*
-*Completed: 2026-04-05*
+
+_Phase: 03-resume-session-flow_
+_Completed: 2026-04-05_

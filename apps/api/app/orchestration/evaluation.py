@@ -19,19 +19,21 @@ def evaluate_resume_package(
     analysis: JDAnalysisRecord,
 ) -> EvaluationScorecardRecord:
     resume_text = package.markdown_resume.lower()
-    covered_requirements = count_requirement_hits(analysis.top_requirements, resume_text)
+    covered_requirements = count_requirement_hits(
+        analysis.top_requirements, resume_text
+    )
     total_requirements = max(len(analysis.top_requirements), 1)
     omitted_count = len(blueprint.omitted_signals)
     bullets = [
-        bullet
-        for role in blueprint.selected_roles
-        for bullet in role.selected_bullets
+        bullet for role in blueprint.selected_roles for bullet in role.selected_bullets
     ]
     quantified_bullets = sum(1 for bullet in bullets if has_metric(bullet.text))
     bullet_count = max(len(bullets), 1)
 
     fit_score = clamp_score(round(covered_requirements / total_requirements * 5))
-    evidence_score = clamp_score(round((bullet_count - omitted_count) / bullet_count * 5))
+    evidence_score = clamp_score(
+        round((bullet_count - omitted_count) / bullet_count * 5)
+    )
     specificity_score = clamp_score(round(quantified_bullets / bullet_count * 5))
     overstatement_risk = clamp_score(1 + omitted_count + max(0, 2 - quantified_bullets))
 
@@ -44,12 +46,7 @@ def evaluate_resume_package(
     )
     overall_score = clamp_score(
         round(
-            (
-                fit_score
-                + evidence_score
-                + specificity_score
-                + (6 - overstatement_risk)
-            )
+            (fit_score + evidence_score + specificity_score + (6 - overstatement_risk))
             / 4
         )
     )
@@ -106,9 +103,7 @@ def build_fit_evidence(requirements: list[str], resume_text: str) -> list[str]:
     evidence: list[str] = []
     for requirement in requirements:
         matched = all(token in resume_text for token in tokenize(requirement))
-        evidence.append(
-            f"{'Matched' if matched else 'Missing'}: {requirement}"
-        )
+        evidence.append(f"{'Matched' if matched else 'Missing'}: {requirement}")
     return evidence
 
 

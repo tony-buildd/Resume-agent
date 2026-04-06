@@ -45,9 +45,7 @@ def get_auth_context(
 
 
 def get_or_create_user(db: Session, auth: AuthContext) -> AppUser:
-    user = db.scalar(
-        select(AppUser).where(AppUser.clerk_user_id == auth.clerk_user_id)
-    )
+    user = db.scalar(select(AppUser).where(AppUser.clerk_user_id == auth.clerk_user_id))
 
     if user is None:
         user = AppUser(

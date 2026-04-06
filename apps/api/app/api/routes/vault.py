@@ -13,7 +13,12 @@ from app.api.routes.sessions import (
 )
 from app.db.models import SessionRecord, VaultRole
 from app.db.session import get_db_session
-from app.orchestration.contracts import AdvanceSessionRequest, AdvanceSessionResponse, SessionEnvelope, StageKey
+from app.orchestration.contracts import (
+    AdvanceSessionRequest,
+    AdvanceSessionResponse,
+    SessionEnvelope,
+    StageKey,
+)
 from app.orchestration.runtime import advance_session, build_session_envelope
 from app.vault.contracts import (
     CreateVaultInterviewSessionRequest,
@@ -104,7 +109,9 @@ def import_seed_material(
     return build_ingestion_response("seed_import", serialize_vault_role(record))
 
 
-@router.post("/interviews/roles", response_model=VaultIngestionResponse, status_code=201)
+@router.post(
+    "/interviews/roles", response_model=VaultIngestionResponse, status_code=201
+)
 def capture_guided_role(
     payload: GuidedRoleCaptureRequest,
     auth: Annotated[AuthContext, Depends(get_auth_context)],

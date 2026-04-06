@@ -4,7 +4,6 @@ import { redirect } from "next/navigation";
 
 import { advanceSession } from "@/lib/api/sessions";
 
-
 export async function submitWorkspaceReview(formData: FormData) {
   const sessionId = String(formData.get("sessionId") ?? "").trim();
   const mode = String(formData.get("mode") ?? "resume").trim();
@@ -27,7 +26,6 @@ export async function submitWorkspaceReview(formData: FormData) {
   }
   redirect(`/workspace?${params.toString()}`);
 }
-
 
 function buildAdvancePayload(action: string) {
   switch (action) {

@@ -11,6 +11,7 @@ Phase 2 needs a vault model that stays truthful, reusable across many target rol
 ## Recommended Phase Approach
 
 ### Canonical vault model
+
 - Keep the canonical vault relational in `Postgres`.
 - Model the core entities explicitly:
   - `VaultCompany`
@@ -22,6 +23,7 @@ Phase 2 needs a vault model that stays truthful, reusable across many target rol
 - Keep facts and candidate bullets separate. Facts are reusable evidence; bullets are story-specific renderings that may share the same facts.
 
 ### Provenance and review state
+
 - Use explicit review/provenance fields on facts and bullets rather than inferred conventions.
 - Facts should at least encode:
   - source type (`seed_material`, `interview_answer`, `agent_inference`)
@@ -30,6 +32,7 @@ Phase 2 needs a vault model that stays truthful, reusable across many target rol
 - Candidate bullets should track whether they are safe for drafting or only useful for prompting/questioning.
 
 ### Ingestion architecture
+
 - Split vault ingestion into two paths:
   - seed import path for resume/portfolio/profile material
   - guided interview path for one-role / one-project capture
@@ -37,6 +40,7 @@ Phase 2 needs a vault model that stays truthful, reusable across many target rol
 - Story checkpoint review should happen after a coherent role/project capture, not after every single extracted fact.
 
 ### Retrieval architecture
+
 - Use `ChromaDB` only for long-form semantic retrieval over imported notes, interview answers, and explanation text.
 - Keep retrieval layered:
   - relational query for canonical entities and review-state filtering
@@ -48,21 +52,21 @@ Phase 2 needs a vault model that stays truthful, reusable across many target rol
 
 ### GSD Skills
 
-| Skill | Decision | Why |
-|-------|----------|-----|
-| `gsd-discuss-phase` | Used | Phase context and locked vault decisions were needed first |
-| `gsd-plan-phase` | Used | Phase 2 needs explicit implementation slices before execution |
-| `gsd-execute-phase` | Deferred | Use after the plan files are ready |
-| `gsd-verify-work` | Deferred | Use after Phase 2 implementation exists |
-| `gsd-add-tests` | Deferred | Add after completed vault behavior exists |
+| Skill               | Decision | Why                                                           |
+| ------------------- | -------- | ------------------------------------------------------------- |
+| `gsd-discuss-phase` | Used     | Phase context and locked vault decisions were needed first    |
+| `gsd-plan-phase`    | Used     | Phase 2 needs explicit implementation slices before execution |
+| `gsd-execute-phase` | Deferred | Use after the plan files are ready                            |
+| `gsd-verify-work`   | Deferred | Use after Phase 2 implementation exists                       |
+| `gsd-add-tests`     | Deferred | Add after completed vault behavior exists                     |
 
 ### Non-GSD Skills
 
-| Skill | Decision | Why |
-|-------|----------|-----|
-| `brainstorming` | Used | Needed to clarify the vault trust model and data shape before planning |
-| `openai-docs` | Skipped | Phase 2 does not depend on current OpenAI API behavior |
-| `frontend-design` | Deferred | Vault UI polish is not the primary concern in this phase |
+| Skill             | Decision | Why                                                                    |
+| ----------------- | -------- | ---------------------------------------------------------------------- |
+| `brainstorming`   | Used     | Needed to clarify the vault trust model and data shape before planning |
+| `openai-docs`     | Skipped  | Phase 2 does not depend on current OpenAI API behavior                 |
+| `frontend-design` | Deferred | Vault UI polish is not the primary concern in this phase               |
 
 ## Risks To Address In Planning
 
@@ -84,4 +88,5 @@ Phase 2 needs a vault model that stays truthful, reusable across many target rol
 - LangGraph’s interrupt/persistence model reinforces the decision to keep vault ingestion attached to resumable session boundaries rather than building a disconnected import pipeline.
 
 ---
-*Phase research completed: 2026-04-05*
+
+_Phase research completed: 2026-04-05_

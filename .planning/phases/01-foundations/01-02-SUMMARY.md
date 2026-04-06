@@ -42,6 +42,7 @@ completed: 2026-04-05
 - **Files modified:** 13
 
 ## Accomplishments
+
 - Added Clerk-backed auth boundaries, sign-in/up routes, and a protected workspace shell in the Next.js app.
 - Added backend settings, SQLAlchemy database wiring, and the initial user/session/artifact/trace persistence models.
 - Exposed typed health and session lifecycle routes that enforce user ownership and prepare the orchestration layer for phase `01-03`.
@@ -57,6 +58,7 @@ Each task was committed atomically:
 **Plan metadata:** `9283eee` (docs: add phase 01-02 setup requirements)
 
 ## Files Created/Modified
+
 - `apps/web/src/lib/auth.ts` - Centralized Clerk server auth helpers and workspace redirect behavior
 - `apps/web/src/proxy.ts` - Protected workspace route matcher using Clerk middleware
 - `apps/web/src/app/(workspace)/layout.tsx` - Authenticated workspace shell layout
@@ -71,6 +73,7 @@ Each task was committed atomically:
 - `.planning/phases/01-foundations/01-02-USER-SETUP.md` - External setup needed for live Clerk/Postgres verification
 
 ## Decisions Made
+
 - Kept the web auth surface server-first so session-dependent UI can be rendered without client-only guards.
 - Used a single `AppUser` ownership model to anchor every persisted session artifact in later phases.
 - Deliberately stopped short of adding direct Clerk JWT verification to the API until the orchestration contract is in place.
@@ -80,6 +83,7 @@ Each task was committed atomically:
 ### Auto-fixed Issues
 
 **1. Clerk component export mismatch on the landing page**
+
 - **Found during:** Post-implementation verification
 - **Issue:** `SignedIn` and `SignedOut` are not exported by the installed Clerk package version.
 - **Fix:** Switched the landing page to use the shared server auth helper and conditional rendering.
@@ -93,20 +97,24 @@ Each task was committed atomically:
 **Impact on plan:** No scope change. The fix aligned the implementation with the installed Clerk version.
 
 ## Issues Encountered
+
 - Local API verification initially failed because the editable backend package dependencies had not been installed into the repo virtualenv. Installing `apps/api` into `./.venv` resolved the import/runtime checks.
 - End-to-end auth and persistence verification is still gated on real Clerk keys and a reachable Postgres database.
 
 ## User Setup Required
 
 **External services require manual configuration.** See [01-02-USER-SETUP.md](./01-02-USER-SETUP.md) for:
+
 - Environment variables to add
 - Clerk and Postgres setup steps
 - Verification commands
 
 ## Next Phase Readiness
+
 - `01-03` can now layer the first orchestration runtime and typed session envelope on top of stable auth and persistence primitives.
 - Remaining live verification requires your `CLERK_SECRET_KEY`, `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, and a working `DATABASE_URL`.
 
 ---
-*Phase: 01-foundations*
-*Completed: 2026-04-05*
+
+_Phase: 01-foundations_
+_Completed: 2026-04-05_
