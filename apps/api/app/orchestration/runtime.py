@@ -812,9 +812,25 @@ def advance_session(
             runtime["capability_route_summary"] = serialize_model_payload(
                 capability_route.summary
             )
-            analysis, research = generate_jd_analysis_bundle(latest_answer)
-            runtime["job_constraint_profile"] = serialize_model_payload(analysis)
-            runtime["research_summary"] = serialize_model_payload(research)
+            research_bundle = generate_jd_analysis_bundle(
+                latest_answer,
+                route=capability_route,
+            )
+            runtime["job_constraint_profile"] = serialize_model_payload(
+                research_bundle.analysis
+            )
+            runtime["research_summary"] = serialize_model_payload(
+                research_bundle.research_summary
+            )
+            runtime["research_plan"] = serialize_model_payload(
+                research_bundle.research_plan
+            )
+            runtime["source_bundle"] = serialize_model_payload(
+                research_bundle.source_bundle
+            )
+            runtime["strategy_synthesis"] = serialize_model_payload(
+                research_bundle.strategy_synthesis
+            )
 
             jd_analysis = upsert_stage_artifact(
                 db,
@@ -841,6 +857,36 @@ def advance_session(
                     "approvalState": "pending",
                     "research": runtime["research_summary"],
                 },
+            )
+            upsert_stage_artifact(
+                db,
+                record,
+                stage=StageKey.JD_ANALYSIS_REVIEW,
+                kind="research-plan",
+                status=ArtifactStatus.CANDIDATE,
+                title="Research planning artifact",
+                summary="Subquestions and route preferences for the JD research pass.",
+                payload=runtime["research_plan"],
+            )
+            upsert_stage_artifact(
+                db,
+                record,
+                stage=StageKey.JD_ANALYSIS_REVIEW,
+                kind="source-bundle",
+                status=ArtifactStatus.CANDIDATE,
+                title="Research source bundle",
+                summary="Collected sources and citations that fed the strategy synthesis.",
+                payload=runtime["source_bundle"],
+            )
+            upsert_stage_artifact(
+                db,
+                record,
+                stage=StageKey.JD_ANALYSIS_REVIEW,
+                kind="strategy-synthesis",
+                status=ArtifactStatus.CANDIDATE,
+                title="Strategy synthesis artifact",
+                summary="Confidence-tagged strategy synthesis built from the routed research source bundle.",
+                payload=runtime["strategy_synthesis"],
             )
             upsert_stage_artifact(
                 db,

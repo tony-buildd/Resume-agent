@@ -152,6 +152,53 @@ class ResearchSummaryRecord(BaseModel):
     sources: list[ResearchSourceRecord]
 
 
+class ResearchSubquestionRecord(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    question: str
+    reason: str
+    preferred_source_type: str = Field(alias="preferredSourceType")
+
+
+class ResearchPlanRecord(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    objective: str
+    selected_capability: str = Field(alias="selectedCapability")
+    subquestions: list[ResearchSubquestionRecord]
+    notes: list[str] = Field(default_factory=list)
+
+
+class SourceBundleItemRecord(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    title: str
+    url: str | None = None
+    source_type: str = Field(alias="sourceType")
+    note: str | None = None
+    citation: str
+
+
+class SourceBundleRecord(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    items: list[SourceBundleItemRecord]
+    source_count: int = Field(alias="sourceCount")
+    notes: list[str] = Field(default_factory=list)
+
+
+class StrategySynthesisRecord(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    company_name: str | None = Field(default=None, alias="companyName")
+    role_title: str | None = Field(default=None, alias="roleTitle")
+    strategic_summary: str = Field(alias="strategicSummary")
+    market_signals: list[str] = Field(alias="marketSignals")
+    source_notes: list[str] = Field(alias="sourceNotes")
+    citations: list[str]
+    confidence: str
+
+
 class InterrogationPromptRecord(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
