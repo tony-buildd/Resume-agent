@@ -974,7 +974,7 @@ def advance_session(
             )
             jd_analysis = parse_jd_analysis(runtime)
             research_summary = parse_research_summary(runtime)
-            blueprint_record = build_narrative_blueprint(
+            blueprint_result = build_narrative_blueprint(
                 db,
                 user=record.user,
                 analysis=jd_analysis,
@@ -986,6 +986,7 @@ def advance_session(
                     stage=stage,
                 ),
             )
+            blueprint_record = blueprint_result.blueprint
             runtime["narrative_blueprint"] = serialize_model_payload(blueprint_record)
             blueprint = upsert_stage_artifact(
                 db,
@@ -997,6 +998,16 @@ def advance_session(
                 summary="A one-page narrative blueprint built from approved JD context and draft-safe vault evidence.",
                 payload={
                     "blueprint": runtime["narrative_blueprint"],
+                    "selectionTraces": [
+                        trace.model_dump(by_alias=True, mode="json")
+                        for trace in blueprint_result.selection_traces
+                    ],
+                    "budgetPolicy": {
+                        "maxRoles": blueprint_result.budget_policy.max_roles,
+                        "maxStoriesPerRole": blueprint_result.budget_policy.max_stories_per_role,
+                        "maxBulletsPerStory": blueprint_result.budget_policy.max_bullets_per_story,
+                        "tokenBudgetPerStage": blueprint_result.budget_policy.token_budget_per_stage,
+                    },
                     "approvalState": "pending",
                 },
             )
