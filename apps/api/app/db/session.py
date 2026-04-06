@@ -6,7 +6,6 @@ from sqlalchemy.orm import Session, sessionmaker
 from app.config import get_settings
 from app.db.models import Base
 
-
 settings = get_settings()
 
 engine = create_engine(settings.database_url, future=True)

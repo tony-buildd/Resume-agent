@@ -56,7 +56,9 @@ def build_interrogation_prompt(
         *research.market_signals[:2],
     ]
     if vault_context.semantic_matches:
-        supporting_signals.append("Semantic vault recall found related notes, but not enough approved evidence.")
+        supporting_signals.append(
+            "Semantic vault recall found related notes, but not enough approved evidence."
+        )
 
     return InterrogationPromptRecord(
         prompt=prompt,
@@ -88,7 +90,11 @@ def select_requirement_gap(
     analysis: JDAnalysisRecord,
     questioning_safe_roles: list[Any],
 ) -> tuple[str, int]:
-    best_requirement = analysis.top_requirements[0] if analysis.top_requirements else analysis.primary_focus
+    best_requirement = (
+        analysis.top_requirements[0]
+        if analysis.top_requirements
+        else analysis.primary_focus
+    )
     best_score = 10**9
 
     for requirement in analysis.top_requirements or [analysis.primary_focus]:

@@ -88,7 +88,9 @@ class OpenAIResponsesClient:
     ) -> OpenAIResponsePayload:
         payload: dict[str, Any] = {
             "model": model or self.settings.openai_model,
-            "input": build_text_input(system_prompt=system_prompt, user_prompt=user_prompt),
+            "input": build_text_input(
+                system_prompt=system_prompt, user_prompt=user_prompt
+            ),
             "reasoning": {"effort": self.settings.openai_reasoning_effort},
         }
         if tools:

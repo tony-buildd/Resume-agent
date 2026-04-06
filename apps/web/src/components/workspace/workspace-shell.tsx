@@ -3,7 +3,6 @@ import type { SessionEnvelope } from "@/lib/api/sessions";
 
 import { ArtifactPanel, selectActiveArtifact } from "./artifact-panel";
 
-
 type VaultPromptSummary = {
   title: string;
   summary: string;
@@ -34,9 +33,13 @@ export function WorkspaceShell({
 }: WorkspaceShellProps) {
   const isVaultWorkspace =
     workspaceMode === "vault" || session.stage.key.startsWith("vault_");
-  const activeArtifact = selectActiveArtifact(session.artifacts, session.stage.key);
+  const activeArtifact = selectActiveArtifact(
+    session.artifacts,
+    session.stage.key,
+  );
   const statusClass =
-    statusStyles[session.status] ?? "border-slate-200 bg-slate-100 text-slate-700";
+    statusStyles[session.status] ??
+    "border-slate-200 bg-slate-100 text-slate-700";
 
   return (
     <section className="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(340px,0.95fr)]">
@@ -141,9 +144,18 @@ export function WorkspaceShell({
             </div>
 
             <dl className="mt-5 grid grid-cols-3 gap-3">
-              <MetricCard label="Interrupt" value={session.stage.interruptReason} />
-              <MetricCard label="Artifacts" value={String(session.artifactCount)} />
-              <MetricCard label="Trace" value={String(session.traceEventCount)} />
+              <MetricCard
+                label="Interrupt"
+                value={session.stage.interruptReason}
+              />
+              <MetricCard
+                label="Artifacts"
+                value={String(session.artifactCount)}
+              />
+              <MetricCard
+                label="Trace"
+                value={String(session.traceEventCount)}
+              />
             </dl>
           </section>
         </div>
@@ -168,7 +180,9 @@ export function WorkspaceShell({
                     <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
                       {event.stage}
                     </p>
-                    <span className="text-[11px] text-slate-500">{event.level}</span>
+                    <span className="text-[11px] text-slate-500">
+                      {event.level}
+                    </span>
                   </div>
                   <p className="mt-2 text-sm leading-6 text-slate-800">
                     {event.message}
@@ -180,7 +194,9 @@ export function WorkspaceShell({
 
           <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_18px_45px_-36px_rgba(15,23,42,0.35)]">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-slate-950">Career vault</h3>
+              <h3 className="text-lg font-semibold text-slate-950">
+                Career vault
+              </h3>
               <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-medium text-slate-600">
                 {vaultRoles.length} roles
               </span>
@@ -192,8 +208,12 @@ export function WorkspaceShell({
                     key={role.id}
                     className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4"
                   >
-                    <p className="text-sm font-semibold text-slate-950">{role.title}</p>
-                    <p className="mt-1 text-sm text-slate-600">{role.company.name}</p>
+                    <p className="text-sm font-semibold text-slate-950">
+                      {role.title}
+                    </p>
+                    <p className="mt-1 text-sm text-slate-600">
+                      {role.company.name}
+                    </p>
                     <p className="mt-3 text-sm leading-6 text-slate-600">
                       {role.summary ?? "No summary yet."}
                     </p>
@@ -201,7 +221,8 @@ export function WorkspaceShell({
                 ))
               ) : (
                 <article className="rounded-[22px] border border-dashed border-slate-300 bg-slate-50 px-4 py-4 text-sm leading-7 text-slate-600">
-                  No canonical roles stored yet. Use vault mode to capture one story thread at a time.
+                  No canonical roles stored yet. Use vault mode to capture one
+                  story thread at a time.
                 </article>
               )}
             </div>
@@ -214,60 +235,72 @@ export function WorkspaceShell({
           artifact={activeArtifact}
           fallbackSummary={session.stage.summary}
           traceCount={session.traceEventCount}
+          artifacts={session.artifacts}
+          stageKey={session.stage.key}
+          sessionId={session.id}
+          workspaceMode={workspaceMode}
         />
 
         <section className="rounded-[30px] border border-slate-200/80 bg-white/96 p-6 shadow-[0_24px_80px_-42px_rgba(15,23,42,0.35)]">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-slate-950">Artifact stream</h3>
+            <h3 className="text-lg font-semibold text-slate-950">
+              Artifact stream
+            </h3>
             <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-medium text-slate-600">
               {session.artifactCount}
             </span>
           </div>
           <div className="mt-4 space-y-3">
-            {session.artifacts.slice().reverse().map((artifact) => (
-              <article
-                key={artifact.id}
-                className={`rounded-[22px] border px-4 py-4 ${
-                  artifact.id === activeArtifact?.id
-                    ? "border-slate-950 bg-slate-950 text-white"
-                    : "border-slate-200 bg-slate-50 text-slate-900"
-                }`}
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-sm font-semibold">{artifact.title}</p>
-                  <span
-                    className={`rounded-full px-2 py-1 text-[10px] font-medium uppercase tracking-[0.18em] ${
+            {session.artifacts
+              .slice()
+              .reverse()
+              .map((artifact) => (
+                <article
+                  key={artifact.id}
+                  className={`rounded-[22px] border px-4 py-4 ${
+                    artifact.id === activeArtifact?.id
+                      ? "border-slate-950 bg-slate-950 text-white"
+                      : "border-slate-200 bg-slate-50 text-slate-900"
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-sm font-semibold">{artifact.title}</p>
+                    <span
+                      className={`rounded-full px-2 py-1 text-[10px] font-medium uppercase tracking-[0.18em] ${
+                        artifact.id === activeArtifact?.id
+                          ? "bg-white/10 text-white"
+                          : "bg-white text-slate-500"
+                      }`}
+                    >
+                      {artifact.status}
+                    </span>
+                  </div>
+                  <p
+                    className={`mt-2 text-sm leading-6 ${
                       artifact.id === activeArtifact?.id
-                        ? "bg-white/10 text-white"
-                        : "bg-white text-slate-500"
+                        ? "text-slate-100"
+                        : "text-slate-600"
                     }`}
                   >
-                    {artifact.status}
-                  </span>
-                </div>
-                <p
-                  className={`mt-2 text-sm leading-6 ${
-                    artifact.id === activeArtifact?.id ? "text-slate-100" : "text-slate-600"
-                  }`}
-                >
-                  {artifact.summary}
-                </p>
-                <p
-                  className={`mt-3 text-[11px] uppercase tracking-[0.18em] ${
-                    artifact.id === activeArtifact?.id ? "text-slate-300" : "text-slate-500"
-                  }`}
-                >
-                  {artifact.kind}
-                </p>
-              </article>
-            ))}
+                    {artifact.summary}
+                  </p>
+                  <p
+                    className={`mt-3 text-[11px] uppercase tracking-[0.18em] ${
+                      artifact.id === activeArtifact?.id
+                        ? "text-slate-300"
+                        : "text-slate-500"
+                    }`}
+                  >
+                    {artifact.kind}
+                  </p>
+                </article>
+              ))}
           </div>
         </section>
       </aside>
     </section>
   );
 }
-
 
 function MetricCard({ label, value }: { label: string; value: string }) {
   return (
@@ -280,11 +313,14 @@ function MetricCard({ label, value }: { label: string; value: string }) {
   );
 }
 
-
-function readPrimaryPrompt(artifact: SessionEnvelope["artifacts"][number] | null) {
+function readPrimaryPrompt(
+  artifact: SessionEnvelope["artifacts"][number] | null,
+) {
   if (!artifact) {
     return null;
   }
 
-  return typeof artifact.payload.prompt === "string" ? artifact.payload.prompt : null;
+  return typeof artifact.payload.prompt === "string"
+    ? artifact.payload.prompt
+    : null;
 }

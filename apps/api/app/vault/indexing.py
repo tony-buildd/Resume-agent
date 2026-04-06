@@ -95,7 +95,9 @@ class VaultIndexer:
         return matches
 
 
-def build_role_index_documents(*, user_id: str, role: VaultRoleRecord) -> list[VaultIndexDocument]:
+def build_role_index_documents(
+    *, user_id: str, role: VaultRoleRecord
+) -> list[VaultIndexDocument]:
     documents: list[VaultIndexDocument] = []
     role_context = f"{role.company.name} {role.title}".strip()
 
@@ -120,19 +122,23 @@ def build_role_index_documents(*, user_id: str, role: VaultRoleRecord) -> list[V
         documents.append(
             VaultIndexDocument(
                 id=f"fact:{fact.id}",
-                document=build_fact_document(role_context=role_context, statement=fact.statement, evidence=fact.evidence),
+                document=build_fact_document(
+                    role_context=role_context,
+                    statement=fact.statement,
+                    evidence=fact.evidence,
+                ),
                 metadata={
                     "user_id": user_id,
                     "role_id": role.id,
                     "record_type": "fact",
                     "company_name": role.company.name,
                     "role_title": role.title,
-                        "review_state": fact.review_state,
-                        "draft_eligible": str(fact.draft_eligible).lower(),
-                        "source_type": fact.source_type,
-                    },
-                )
+                    "review_state": fact.review_state,
+                    "draft_eligible": str(fact.draft_eligible).lower(),
+                    "source_type": fact.source_type,
+                },
             )
+        )
 
     for bullet in role.role_bullet_candidates:
         documents.append(
@@ -234,13 +240,17 @@ def build_role_index_documents(*, user_id: str, role: VaultRoleRecord) -> list[V
     return documents
 
 
-def build_fact_document(*, role_context: str, statement: str, evidence: str | None) -> str:
+def build_fact_document(
+    *, role_context: str, statement: str, evidence: str | None
+) -> str:
     if evidence:
         return f"{role_context}\n{statement}\nEvidence: {evidence}"
     return f"{role_context}\n{statement}"
 
 
-def build_bullet_document(*, role_context: str, text: str, story_angle: str | None) -> str:
+def build_bullet_document(
+    *, role_context: str, text: str, story_angle: str | None
+) -> str:
     if story_angle:
         return f"{role_context}\nAngle: {story_angle}\n{text}"
     return f"{role_context}\n{text}"

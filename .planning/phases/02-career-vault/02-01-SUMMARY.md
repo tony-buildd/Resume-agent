@@ -13,9 +13,15 @@ provides:
 affects: [phase-2, phase-3, persistence, retrieval]
 tech-stack:
   added: [vault-orm, vault-contracts]
-  patterns: [fact-vs-bullet separation, review-state fields, typed nested role envelope]
+  patterns:
+    [fact-vs-bullet separation, review-state fields, typed nested role envelope]
 key-files:
-  created: [apps/api/app/vault/contracts.py, apps/api/app/vault/service.py, apps/api/app/api/routes/vault.py]
+  created:
+    [
+      apps/api/app/vault/contracts.py,
+      apps/api/app/vault/service.py,
+      apps/api/app/api/routes/vault.py,
+    ]
   modified: [apps/api/app/db/models.py, apps/api/app/main.py]
 key-decisions:
   - "Keep facts and bullet candidates as separate entities linked through supporting fact relationships."
@@ -42,6 +48,7 @@ completed: 2026-04-05
 - **Files modified:** 5
 
 ## Accomplishments
+
 - Added normalized ORM entities for the Career Vault with provenance/review state and fact-to-bullet linkage.
 - Added typed request/response contracts plus a vault service layer to create and serialize nested role trees.
 - Exposed user-scoped vault create/list routes and verified role/story/fact/bullet round-tripping with TestClient.
@@ -57,6 +64,7 @@ Each task was committed atomically:
 **Plan metadata:** `2713ddb` (current execution checkpoint)
 
 ## Files Created/Modified
+
 - `apps/api/app/db/models.py` - Canonical vault entities and supporting fact linkage table
 - `apps/api/app/vault/contracts.py` - Typed nested vault input/output models
 - `apps/api/app/vault/service.py` - Role-tree persistence and serialization helpers
@@ -64,6 +72,7 @@ Each task was committed atomically:
 - `apps/api/app/main.py` - API router registration for the vault surface
 
 ## Decisions Made
+
 - Stored project-story facts and role-level facts separately while still keeping them under the same role for later retrieval.
 - Used `supportingFactClientKeys` in creation payloads so bullets can link to facts immediately without requiring multiple API round trips.
 - Kept company creation simple for now and deferred deduplication/merge behavior to later ingestion work.
@@ -73,6 +82,7 @@ Each task was committed atomically:
 ### Auto-fixed Issues
 
 **1. Fact and bullet relationship records were duplicated in memory**
+
 - **Found during:** Local API verification for nested role creation
 - **Issue:** The service was assigning relationships and appending children, which produced duplicate serialized facts/bullets.
 - **Fix:** Removed the extra append path and filtered role-level serialization to exclude story-level children.
@@ -86,6 +96,7 @@ Each task was committed atomically:
 **Impact on plan:** No scope change. The fix was required to keep the typed envelope trustworthy.
 
 ## Issues Encountered
+
 - The initial verification payload mixed review-state and source-type values, which was corrected during API testing before final verification.
 
 ## User Setup Required
@@ -93,9 +104,11 @@ Each task was committed atomically:
 None - the existing Phase 1 database configuration was sufficient for this plan.
 
 ## Next Phase Readiness
+
 - `02-02` can now build import and interview-first ingestion on top of stable canonical vault entities and routes.
 - `02-03` can later layer retrieval/indexing logic onto the persisted fact and bullet model without redefining the schema.
 
 ---
-*Phase: 02-career-vault*
-*Completed: 2026-04-05*
+
+_Phase: 02-career-vault_
+_Completed: 2026-04-05_

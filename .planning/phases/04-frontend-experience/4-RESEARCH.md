@@ -7,11 +7,13 @@ The existing workspace is useful as a runtime inspector but not yet as a product
 ## Recommended Frontend Direction
 
 ### 1. Server shell + client workspace controller
+
 - Keep the authenticated route server-rendered for bootstrap and auth safety.
 - Hydrate into a client workspace controller that owns panel selection, optimistic review state, and session advance actions.
 - Avoid making the entire route client-only; the current server-side data access is valuable and already works.
 
 ### 2. Artifact registry by kind
+
 - Introduce artifact renderers keyed by `kind`:
   - `question`
   - `jd-analysis`
@@ -24,6 +26,7 @@ The existing workspace is useful as a runtime inspector but not yet as a product
 - Use a generic fallback renderer for unknown artifacts so backend evolution does not immediately break the workspace.
 
 ### 3. Chat-centered workspace layout
+
 - Primary column:
   - active session narrative
   - current prompt/review surface
@@ -34,6 +37,7 @@ The existing workspace is useful as a runtime inspector but not yet as a product
 - Preserve the current broad split layout on desktop, but let the panel collapse into tabs or drawers on narrower widths.
 
 ### 4. Stage-aware default paneling
+
 - Default the side panel based on the active stage:
   - `jd_analysis_review` -> JD analysis + research
   - `career_intake` -> interrogation question + relevant vault memory
@@ -42,6 +46,7 @@ The existing workspace is useful as a runtime inspector but not yet as a product
 - Let the user override the panel, but do not force them to hunt for the active artifact.
 
 ### 5. Review interactions
+
 - Inline actions should exist where the artifact is being read:
   - approve
   - reject
@@ -50,6 +55,7 @@ The existing workspace is useful as a runtime inspector but not yet as a product
 - Phase 4 should introduce visible diffs for artifacts that can change across revisions, especially blueprint and draft package content.
 
 ### 6. Motion and accessibility
+
 - Use motion only for orientation: panel swaps, diff reveals, and review-state transitions.
 - Keep action controls keyboard reachable and label state transitions clearly.
 - Avoid hiding critical state behind hover-only UI.
@@ -73,5 +79,5 @@ Start with a typed workspace shell and artifact registry before adding bespoke i
 
 ---
 
-*Phase: 04-frontend-experience*
-*Research captured: 2026-04-05*
+_Phase: 04-frontend-experience_
+_Research captured: 2026-04-05_

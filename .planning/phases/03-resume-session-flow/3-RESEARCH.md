@@ -11,6 +11,7 @@ Phase 3 needs to turn the completed Career Vault into a controllable JD-to-resum
 ## Recommended Phase Approach
 
 ### Orchestration shape
+
 - Keep the Phase 1 runtime shell and expand it with Phase 3 stages rather than introducing a second orchestration engine.
 - Represent JD analysis, research, blueprint, draft, and evaluator outputs as first-class artifacts with trace events.
 - Reuse the interrupt pattern already proven in Phase 1 and Phase 2 for:
@@ -20,6 +21,7 @@ Phase 3 needs to turn the completed Career Vault into a controllable JD-to-resum
   - blueprint approval
 
 ### Research layering
+
 - Split the early flow into:
   1. `JD analysis` - structured requirement extraction from the user-provided JD
   2. `company research` - browser-backed cited enrichment when useful
@@ -27,11 +29,13 @@ Phase 3 needs to turn the completed Career Vault into a controllable JD-to-resum
 - Store cited research separately from the distilled strategy so the UI can show both “raw evidence” and “what this means.”
 
 ### Vault usage
+
 - Use `questioningSafeRoles` and semantic note matches during gap analysis and follow-up question generation.
 - Use only `draftSafeRoles` when generating the narrative blueprint and draft package.
 - Preserve many candidate bullets per role and let later stages pick the subset that survives the one-page budget.
 
 ### Writing and evaluation
+
 - Make `Strategist` output a blueprint only, not prose.
 - Make `Writer` output:
   - one-page markdown resume
@@ -46,14 +50,17 @@ Phase 3 needs to turn the completed Career Vault into a controllable JD-to-resum
 ## OpenAI Research Notes
 
 ### Current API surface
+
 - OpenAI’s current docs position the `Responses API` as the modern surface for tool-using, stateful interactions, with structured JSON text outputs and tool selection controls in the same API family.
 - The Responses API reference also shows built-in tools, MCP tools, and custom function calls under one request shape, which matches this project’s agent-harness goal better than a plain chat-only flow.
 
 ### Model guidance
+
 - OpenAI’s current models docs recommend `GPT-5.2` or `GPT-5.1` for most API usage.
 - The current GPT-5.x model pages explicitly list `structured outputs` support and `Responses` endpoint support, which matters because this phase depends on typed artifacts and tool usage.
 
 ### Planning implication
+
 - For Phase 3, prefer a small OpenAI adapter built around the Responses API and typed JSON outputs.
 - Keep the adapter thin enough that a later Anthropic implementation can replace the provider call layer without rewriting session/runtime logic.
 
@@ -61,22 +68,22 @@ Phase 3 needs to turn the completed Career Vault into a controllable JD-to-resum
 
 ### GSD Skills
 
-| Skill | Decision | Why |
-|-------|----------|-----|
-| `gsd-discuss-phase` | Used | Phase 3 needed fresh product/runtime decisions before planning |
-| `gsd-plan-phase` | Deferred | Use after the Phase 3 context and research docs are written |
-| `gsd-execute-phase` | Deferred | Use after the plan files are ready |
-| `gsd-verify-work` | Deferred | Use after Phase 3 implementation exists |
-| `gsd-add-tests` | Deferred | Add after completed session-flow behavior exists |
+| Skill               | Decision | Why                                                            |
+| ------------------- | -------- | -------------------------------------------------------------- |
+| `gsd-discuss-phase` | Used     | Phase 3 needed fresh product/runtime decisions before planning |
+| `gsd-plan-phase`    | Deferred | Use after the Phase 3 context and research docs are written    |
+| `gsd-execute-phase` | Deferred | Use after the plan files are ready                             |
+| `gsd-verify-work`   | Deferred | Use after Phase 3 implementation exists                        |
+| `gsd-add-tests`     | Deferred | Add after completed session-flow behavior exists               |
 
 ### Non-GSD Skills
 
-| Skill | Decision | Why |
-|-------|----------|-----|
-| `brainstorming` | Used | Needed to recheck the multi-stage flow design before planning |
-| `openai-docs` | Used | Phase 3 depends on current OpenAI API guidance for structured outputs and tool-using flows |
-| `frontend-design` | Deferred | Final workspace UX is a later phase concern |
-| `vercel-react-best-practices` | Deferred | This phase is backend/runtime-heavy |
+| Skill                         | Decision | Why                                                                                        |
+| ----------------------------- | -------- | ------------------------------------------------------------------------------------------ |
+| `brainstorming`               | Used     | Needed to recheck the multi-stage flow design before planning                              |
+| `openai-docs`                 | Used     | Phase 3 depends on current OpenAI API guidance for structured outputs and tool-using flows |
+| `frontend-design`             | Deferred | Final workspace UX is a later phase concern                                                |
+| `vercel-react-best-practices` | Deferred | This phase is backend/runtime-heavy                                                        |
 
 ## Risks To Address In Planning
 
@@ -100,4 +107,5 @@ Phase 3 needs to turn the completed Career Vault into a controllable JD-to-resum
 - GPT-5.2 model page showing structured outputs + Responses support: [GPT-5.2 Model](https://platform.openai.com/docs/models/gpt-5.2/)
 
 ---
-*Phase research completed: 2026-04-06*
+
+_Phase research completed: 2026-04-06_

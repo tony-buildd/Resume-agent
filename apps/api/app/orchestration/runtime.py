@@ -42,7 +42,6 @@ from app.vault.contracts import GuidedRoleCaptureRequest, StoryCheckpointRecord
 from app.vault.ingestion import build_guided_capture_request, extract_statements
 from app.vault.service import create_vault_role_tree, serialize_vault_role
 
-
 STAGE_LABELS: dict[StageKey, str] = {
     StageKey.BOOTSTRAP: "Bootstrap",
     StageKey.VAULT_SEED_IMPORT: "Vault Seed Import",
@@ -266,7 +265,9 @@ def mark_jd_analysis_approved(record: SessionRecord, runtime: dict[str, Any]) ->
     )
 
 
-def mark_vault_checkpoint_approved(record: SessionRecord, runtime: dict[str, Any]) -> None:
+def mark_vault_checkpoint_approved(
+    record: SessionRecord, runtime: dict[str, Any]
+) -> None:
     checkpoint_id = runtime.get("vault_checkpoint_artifact_id")
     if not checkpoint_id:
         return
@@ -962,7 +963,9 @@ def build_runtime_event(event: TraceEventRecord) -> RuntimeTraceEvent:
     )
 
 
-def build_session_envelope(record: SessionRecord, clerk_user_id: str | None = None) -> SessionEnvelope:
+def build_session_envelope(
+    record: SessionRecord, clerk_user_id: str | None = None
+) -> SessionEnvelope:
     runtime = ensure_runtime_state(record)
     ordered_artifacts = sorted(record.artifacts, key=lambda item: item.created_at)
     ordered_events = sorted(record.trace_events, key=lambda item: item.created_at)

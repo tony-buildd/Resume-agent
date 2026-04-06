@@ -2,7 +2,8 @@
 phase: 02-career-vault
 plan: 03
 subsystem: retrieval
-tags: [career-vault, chromadb, retrieval, review-state-filtering, semantic-recall]
+tags:
+  [career-vault, chromadb, retrieval, review-state-filtering, semantic-recall]
 requires:
   - phase: 02-career-vault
     provides: canonical vault schema, ingestion runtime, checkpointed role capture
@@ -13,10 +14,14 @@ provides:
 affects: [phase-2, phase-3, retrieval, questioning, drafting]
 tech-stack:
   added: [chromadb, vault-retrieval-service, typed-recall-client]
-  patterns: [postgres-source-of-truth, semantic-sidecar-index, review-state-aware-retrieval]
+  patterns:
+    [
+      postgres-source-of-truth,
+      semantic-sidecar-index,
+      review-state-aware-retrieval,
+    ]
 key-files:
-  created:
-    [apps/api/app/vault/indexing.py, apps/api/app/vault/retrieval.py]
+  created: [apps/api/app/vault/indexing.py, apps/api/app/vault/retrieval.py]
   modified:
     [
       apps/api/pyproject.toml,
@@ -50,6 +55,7 @@ completed: 2026-04-06
 - **Files modified:** 7
 
 ## Accomplishments
+
 - Added Chroma configuration and an isolated indexing adapter that turns canonical role trees into semantic note documents without changing the Postgres source-of-truth model.
 - Added retrieval contracts and services that filter the same role into `draftSafeRoles` and `questioningSafeRoles` according to review state and draft eligibility.
 - Exposed the retrieval contract through FastAPI and the Next.js server-side vault client so later workspace and session phases can consume it directly.
@@ -63,6 +69,7 @@ Each task was committed atomically:
 3. **Task 3: Expose typed retrieval access to the web app** - `e8ad393` (feat)
 
 ## Files Created/Modified
+
 - `apps/api/pyproject.toml` - Added `chromadb` dependency
 - `apps/api/app/config.py` - Added Chroma backend settings
 - `apps/api/app/vault/indexing.py` - Isolated Chroma indexing and semantic query adapter
@@ -72,6 +79,7 @@ Each task was committed atomically:
 - `apps/web/src/lib/api/vault.ts` - Typed vault retrieval client for the web app
 
 ## Decisions Made
+
 - Kept indexing opt-in through backend settings while defaulting the adapter on for local development so semantic recall is available without extra product wiring.
 - Ranked relational role matches with lightweight in-memory scoring for this phase, deferring more advanced ranking or reranking to later orchestration work.
 - Used the same nested role record shape for retrieval outputs, but filtered the child facts and bullets per trust boundary instead of inventing separate write-only DTOs.
@@ -81,6 +89,7 @@ Each task was committed atomically:
 ### Auto-fixed Issues
 
 **1. Internal Pydantic field names differed from API aliases**
+
 - **Found during:** Retrieval and indexing implementation
 - **Issue:** Server-side Pydantic records expose snake_case field names internally, while the API uses camelCase aliases. The first pass used the alias names directly.
 - **Fix:** Updated indexing and retrieval services to consume the internal snake_case fields while preserving camelCase serialization at the API boundary.
@@ -93,6 +102,7 @@ Each task was committed atomically:
 **Impact on plan:** No scope change. The fix was required to keep the typed retrieval layer trustworthy.
 
 ## Issues Encountered
+
 - The local Python environment lagged behind the new dependency declaration, so `chromadb` had to be installed into the existing `.venv` before semantic verification could run.
 
 ## User Setup Required
@@ -100,9 +110,11 @@ Each task was committed atomically:
 None beyond the project’s normal dependency installation flow. The current `.env` configuration was sufficient for verification.
 
 ## Next Phase Readiness
+
 - Phase 2 is complete. Phase 3 can now query the vault through one typed retrieval surface without risking inferred facts leaking into resume drafts.
 - `03-01` can consume `draftSafeRoles`, `questioningSafeRoles`, and semantic note matches while implementing JD analysis and cited research.
 
 ---
-*Phase: 02-career-vault*
-*Completed: 2026-04-06*
+
+_Phase: 02-career-vault_
+_Completed: 2026-04-06_

@@ -26,13 +26,13 @@
 
 ### Component Responsibilities
 
-| Component | Responsibility | Typical Implementation |
-|-----------|----------------|------------------------|
-| Workspace UI | Present chat, artifacts, approvals, diffs, and trace context | Next.js routes, React state, server/client components |
-| Session Orchestrator | Advance typed stages until interrupt or completion | LangGraph with explicit stage schemas and validators |
-| Career Vault | Store hierarchical user memory and bullet candidates | Postgres tables plus Chroma retrieval hooks |
-| Research Layer | Gather JD/company/role evidence and summarize impact | Search adapters + citation-aware summarization |
-| Evaluator | Score drafts and propose targeted revisions | Typed scoring service driven by stage artifacts |
+| Component            | Responsibility                                               | Typical Implementation                                |
+| -------------------- | ------------------------------------------------------------ | ----------------------------------------------------- |
+| Workspace UI         | Present chat, artifacts, approvals, diffs, and trace context | Next.js routes, React state, server/client components |
+| Session Orchestrator | Advance typed stages until interrupt or completion           | LangGraph with explicit stage schemas and validators  |
+| Career Vault         | Store hierarchical user memory and bullet candidates         | Postgres tables plus Chroma retrieval hooks           |
+| Research Layer       | Gather JD/company/role evidence and summarize impact         | Search adapters + citation-aware summarization        |
+| Evaluator            | Score drafts and propose targeted revisions                  | Typed scoring service driven by stage artifacts       |
 
 ## Recommended Project Structure
 
@@ -93,11 +93,11 @@ Artifact panel ← Persisted state ← Stage output ← Postgres / Chroma / Sear
 
 ## Scaling Considerations
 
-| Scale | Architecture Adjustments |
-|-------|--------------------------|
-| 0-1k users | Single API service and single database are sufficient |
-| 1k-100k users | Add caching, job queues, and more careful event/log retention |
-| 100k+ users | Split heavy orchestration workloads and dedicated retrieval/search services |
+| Scale         | Architecture Adjustments                                                    |
+| ------------- | --------------------------------------------------------------------------- |
+| 0-1k users    | Single API service and single database are sufficient                       |
+| 1k-100k users | Add caching, job queues, and more careful event/log retention               |
+| 100k+ users   | Split heavy orchestration workloads and dedicated retrieval/search services |
 
 ### Scaling Priorities
 
@@ -122,19 +122,19 @@ Artifact panel ← Persisted state ← Stage output ← Postgres / Chroma / Sear
 
 ### External Services
 
-| Service | Integration Pattern | Notes |
-|---------|---------------------|-------|
-| Clerk | session verification and user identity mapping | Keep app data user-scoped |
-| Model providers | backend service adapters | Keep provider choice behind a service boundary |
-| Web search/browser tools | research-only stage integrations | All research must retain citations |
+| Service                  | Integration Pattern                            | Notes                                          |
+| ------------------------ | ---------------------------------------------- | ---------------------------------------------- |
+| Clerk                    | session verification and user identity mapping | Keep app data user-scoped                      |
+| Model providers          | backend service adapters                       | Keep provider choice behind a service boundary |
+| Web search/browser tools | research-only stage integrations               | All research must retain citations             |
 
 ### Internal Boundaries
 
-| Boundary | Communication | Notes |
-|----------|---------------|-------|
-| web ↔ api | HTTP/JSON with shared schemas | Artifact contracts should be explicit |
-| orchestrator ↔ vault | service layer calls | Enforce retrieval safety by fact state |
-| orchestrator ↔ evaluator | typed artifact handoff | Evaluator should score artifacts, not raw chat only |
+| Boundary                 | Communication                 | Notes                                               |
+| ------------------------ | ----------------------------- | --------------------------------------------------- |
+| web ↔ api                | HTTP/JSON with shared schemas | Artifact contracts should be explicit               |
+| orchestrator ↔ vault     | service layer calls           | Enforce retrieval safety by fact state              |
+| orchestrator ↔ evaluator | typed artifact handoff        | Evaluator should score artifacts, not raw chat only |
 
 ## Sources
 
@@ -143,5 +143,6 @@ Artifact panel ← Persisted state ← Stage output ← Postgres / Chroma / Sear
 - Exact integration details should be validated in Phase 1 planning
 
 ---
-*Architecture research for: agentic resume optimization platform*
-*Researched: 2026-04-05*
+
+_Architecture research for: agentic resume optimization platform_
+_Researched: 2026-04-05_

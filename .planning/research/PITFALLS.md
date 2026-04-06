@@ -101,43 +101,43 @@ Phase 4
 
 ## Technical Debt Patterns
 
-| Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
-|----------|-------------------|----------------|-----------------|
-| Store all memory as raw transcripts | Fast to prototype | Hard retrieval, no provenance, weak drafting safety | Only for throwaway prototypes |
-| Skip artifact schemas | Less upfront code | Fragile orchestration and poor debuggability | Never for this product |
-| Hide research citations | Cleaner UI at first glance | Lower trust and harder evaluation | Never if research influences strategy |
+| Shortcut                            | Immediate Benefit          | Long-term Cost                                      | When Acceptable                       |
+| ----------------------------------- | -------------------------- | --------------------------------------------------- | ------------------------------------- |
+| Store all memory as raw transcripts | Fast to prototype          | Hard retrieval, no provenance, weak drafting safety | Only for throwaway prototypes         |
+| Skip artifact schemas               | Less upfront code          | Fragile orchestration and poor debuggability        | Never for this product                |
+| Hide research citations             | Cleaner UI at first glance | Lower trust and harder evaluation                   | Never if research influences strategy |
 
 ## Integration Gotchas
 
-| Integration | Common Mistake | Correct Approach |
-|-------------|----------------|------------------|
-| Clerk | Mixing auth identity with app authorization logic ad hoc | Keep clear user ownership boundaries in the app model |
-| ChromaDB | Using embeddings as the canonical truth | Keep semantic retrieval secondary to relational facts |
-| Search/browser tools | Letting external findings flow into drafts without review | Surface citations and strategic summaries first |
+| Integration          | Common Mistake                                            | Correct Approach                                      |
+| -------------------- | --------------------------------------------------------- | ----------------------------------------------------- |
+| Clerk                | Mixing auth identity with app authorization logic ad hoc  | Keep clear user ownership boundaries in the app model |
+| ChromaDB             | Using embeddings as the canonical truth                   | Keep semantic retrieval secondary to relational facts |
+| Search/browser tools | Letting external findings flow into drafts without review | Surface citations and strategic summaries first       |
 
 ## Performance Traps
 
-| Trap | Symptoms | Prevention | When It Breaks |
-|------|----------|------------|----------------|
-| Overly chatty stage persistence | Slow session progression and bloated storage | Persist meaningful artifacts and events, not every token | Medium usage |
-| Recomputing whole sessions on every change | Slow revisions and wasted tokens | Rerun from the earliest affected stage | Low to medium usage |
-| Large unstructured vault retrieval | Irrelevant context injection and draft drift | Keep normalized entities and scoped retrieval | Medium usage |
+| Trap                                       | Symptoms                                     | Prevention                                               | When It Breaks      |
+| ------------------------------------------ | -------------------------------------------- | -------------------------------------------------------- | ------------------- |
+| Overly chatty stage persistence            | Slow session progression and bloated storage | Persist meaningful artifacts and events, not every token | Medium usage        |
+| Recomputing whole sessions on every change | Slow revisions and wasted tokens             | Rerun from the earliest affected stage                   | Low to medium usage |
+| Large unstructured vault retrieval         | Irrelevant context injection and draft drift | Keep normalized entities and scoped retrieval            | Medium usage        |
 
 ## Security Mistakes
 
-| Mistake | Risk | Prevention |
-|---------|------|------------|
-| Weak per-user scoping on vault/session records | Data leakage between users | Enforce ownership checks at the API and query layer |
-| Logging raw sensitive resume data without care | Privacy and compliance issues | Be explicit about what events and artifacts are stored |
-| Blindly trusting imported source material | Corrupt or misleading facts enter the vault | Route imported content through review checkpoints |
+| Mistake                                        | Risk                                        | Prevention                                             |
+| ---------------------------------------------- | ------------------------------------------- | ------------------------------------------------------ |
+| Weak per-user scoping on vault/session records | Data leakage between users                  | Enforce ownership checks at the API and query layer    |
+| Logging raw sensitive resume data without care | Privacy and compliance issues               | Be explicit about what events and artifacts are stored |
+| Blindly trusting imported source material      | Corrupt or misleading facts enter the vault | Route imported content through review checkpoints      |
 
 ## UX Pitfalls
 
-| Pitfall | User Impact | Better Approach |
-|---------|-------------|-----------------|
-| Asking for too much too early | User fatigue before first value | Let tailoring begin after one strong role is captured |
-| Stage transitions with no explanation | Feels random and robotic | Show brief "why this stage / why this question" context |
-| Revision changes with no diff | User cannot trust what changed | Show inline diffs with rationale |
+| Pitfall                               | User Impact                     | Better Approach                                         |
+| ------------------------------------- | ------------------------------- | ------------------------------------------------------- |
+| Asking for too much too early         | User fatigue before first value | Let tailoring begin after one strong role is captured   |
+| Stage transitions with no explanation | Feels random and robotic        | Show brief "why this stage / why this question" context |
+| Revision changes with no diff         | User cannot trust what changed  | Show inline diffs with rationale                        |
 
 ## "Looks Done But Isn't" Checklist
 
@@ -148,20 +148,20 @@ Phase 4
 
 ## Recovery Strategies
 
-| Pitfall | Recovery Cost | Recovery Steps |
-|---------|---------------|----------------|
-| Vault stored too little detail | HIGH | Backfill schema, re-ingest important stories, regenerate bullet candidates |
-| Drafting used unsafe inference | MEDIUM | Tighten retrieval rules, add provenance guards, rerun affected drafts |
-| UI hid orchestration state | MEDIUM | Introduce artifact panels and trace summaries without changing backend contracts |
+| Pitfall                        | Recovery Cost | Recovery Steps                                                                   |
+| ------------------------------ | ------------- | -------------------------------------------------------------------------------- |
+| Vault stored too little detail | HIGH          | Backfill schema, re-ingest important stories, regenerate bullet candidates       |
+| Drafting used unsafe inference | MEDIUM        | Tighten retrieval rules, add provenance guards, rerun affected drafts            |
+| UI hid orchestration state     | MEDIUM        | Introduce artifact panels and trace summaries without changing backend contracts |
 
 ## Pitfall-to-Phase Mapping
 
-| Pitfall | Prevention Phase | Verification |
-|---------|------------------|--------------|
-| Vault equals final resume | Phase 2 | Verify multiple bullets and stories survive for one role |
-| Opaque orchestration | Phases 1 and 4 | Verify artifacts, traces, and approvals are inspectable |
-| Over-questioning | Phase 3 | Verify questions are single, targeted, and stop when marginal value drops |
-| Unsupported claims | Phases 2 and 3 | Verify final bullets reference approved facts only |
+| Pitfall                   | Prevention Phase | Verification                                                              |
+| ------------------------- | ---------------- | ------------------------------------------------------------------------- |
+| Vault equals final resume | Phase 2          | Verify multiple bullets and stories survive for one role                  |
+| Opaque orchestration      | Phases 1 and 4   | Verify artifacts, traces, and approvals are inspectable                   |
+| Over-questioning          | Phase 3          | Verify questions are single, targeted, and stop when marginal value drops |
+| Unsupported claims        | Phases 2 and 3   | Verify final bullets reference approved facts only                        |
 
 ## Sources
 
@@ -170,5 +170,6 @@ Phase 4
 - Deeper validation to continue during phase planning and implementation
 
 ---
-*Pitfalls research for: agentic resume optimization platform*
-*Researched: 2026-04-05*
+
+_Pitfalls research for: agentic resume optimization platform_
+_Researched: 2026-04-05_

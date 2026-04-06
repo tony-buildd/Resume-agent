@@ -16,7 +16,6 @@ from app.vault.contracts import (
 from app.vault.indexing import VaultIndexer
 from app.vault.service import list_vault_roles, serialize_vault_role
 
-
 DRAFT_SAFE_REVIEW_STATES = {
     VaultReviewState.USER_STATED,
     VaultReviewState.APPROVED,

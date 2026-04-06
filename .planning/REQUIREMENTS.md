@@ -73,53 +73,55 @@
 
 ## Out of Scope
 
-| Feature | Reason |
-|---------|--------|
-| Enterprise SSO and org RBAC | Not needed for individual-user MVP |
-| Native mobile clients | Web-first scope is sufficient for learning and validation |
-| Fully autonomous, uncited market research hidden from the user | The product needs visible trust and traceability |
-| Silent fabrication of unsupported claims | Conflicts with the chosen suggest-and-confirm trust model |
+| Feature                                                        | Reason                                                    |
+| -------------------------------------------------------------- | --------------------------------------------------------- |
+| Enterprise SSO and org RBAC                                    | Not needed for individual-user MVP                        |
+| Native mobile clients                                          | Web-first scope is sufficient for learning and validation |
+| Fully autonomous, uncited market research hidden from the user | The product needs visible trust and traceability          |
+| Silent fabrication of unsupported claims                       | Conflicts with the chosen suggest-and-confirm trust model |
 
 ## Traceability
 
-| Requirement | Phase | Status |
-|-------------|-------|--------|
-| AUTH-01 | Phase 1 | Pending |
-| AUTH-02 | Phase 1 | Pending |
-| AUTH-03 | Phase 1 | Pending |
-| VAULT-01 | Phase 2 | Pending |
-| VAULT-02 | Phase 2 | Pending |
-| VAULT-03 | Phase 2 | Pending |
-| VAULT-04 | Phase 2 | Pending |
-| VAULT-05 | Phase 2 | Pending |
-| VAULT-06 | Phase 2 | Pending |
-| RSCH-01 | Phase 3 | Pending |
-| RSCH-02 | Phase 3 | Pending |
-| RSCH-03 | Phase 3 | Pending |
-| FLOW-01 | Phase 1 | Pending |
-| FLOW-02 | Phase 3 | Pending |
-| FLOW-03 | Phase 3 | Pending |
-| FLOW-04 | Phase 3 | Pending |
-| FLOW-05 | Phase 3 | Pending |
-| FLOW-06 | Phase 3 | Pending |
-| WRIT-01 | Phase 3 | Pending |
-| WRIT-02 | Phase 3 | Pending |
-| WRIT-03 | Phase 3 | Pending |
-| WRIT-04 | Phase 3 | Pending |
-| UX-01 | Phase 4 | Pending |
-| UX-02 | Phase 4 | Pending |
-| UX-03 | Phase 4 | Pending |
-| OBS-01 | Phase 4 | Pending |
-| OBS-02 | Phase 1 | Pending |
-| OPS-01 | Phase 5 | Pending |
-| OPS-02 | Phase 5 | Pending |
-| OPS-03 | Phase 5 | Pending |
+| Requirement | Phase   | Status  |
+| ----------- | ------- | ------- |
+| AUTH-01     | Phase 1 | Pending |
+| AUTH-02     | Phase 1 | Pending |
+| AUTH-03     | Phase 1 | Pending |
+| VAULT-01    | Phase 2 | Pending |
+| VAULT-02    | Phase 2 | Pending |
+| VAULT-03    | Phase 2 | Pending |
+| VAULT-04    | Phase 2 | Pending |
+| VAULT-05    | Phase 2 | Pending |
+| VAULT-06    | Phase 2 | Pending |
+| RSCH-01     | Phase 3 | Pending |
+| RSCH-02     | Phase 3 | Pending |
+| RSCH-03     | Phase 3 | Pending |
+| FLOW-01     | Phase 1 | Pending |
+| FLOW-02     | Phase 3 | Pending |
+| FLOW-03     | Phase 3 | Pending |
+| FLOW-04     | Phase 3 | Pending |
+| FLOW-05     | Phase 3 | Pending |
+| FLOW-06     | Phase 3 | Pending |
+| WRIT-01     | Phase 3 | Pending |
+| WRIT-02     | Phase 3 | Pending |
+| WRIT-03     | Phase 3 | Pending |
+| WRIT-04     | Phase 3 | Pending |
+| UX-01       | Phase 4 | Pending |
+| UX-02       | Phase 4 | Pending |
+| UX-03       | Phase 4 | Pending |
+| OBS-01      | Phase 4 | Pending |
+| OBS-02      | Phase 1 | Pending |
+| OPS-01      | Phase 5 | Pending |
+| OPS-02      | Phase 5 | Pending |
+| OPS-03      | Phase 5 | Pending |
 
 **Coverage:**
+
 - v1 requirements: 30 total
 - Mapped to phases: 30
 - Unmapped: 0 ✓
 
 ---
-*Requirements defined: 2026-04-05*
-*Last updated: 2026-04-05 after initial definition*
+
+_Requirements defined: 2026-04-05_
+_Last updated: 2026-04-05 after initial definition_

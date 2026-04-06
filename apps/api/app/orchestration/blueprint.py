@@ -139,7 +139,9 @@ def select_role_bullets(
                         text=bullet.text,
                         sourceStoryId=story.id,
                         sourceStoryName=story.name,
-                        rationale=build_bullet_rationale(bullet.text, keyword_priorities),
+                        rationale=build_bullet_rationale(
+                            bullet.text, keyword_priorities
+                        ),
                     ),
                 )
             )
@@ -210,7 +212,9 @@ def build_headline_focus(
     return f"Optimize the resume for {role_title} with emphasis on {analysis.primary_focus.lower()}."
 
 
-def build_sections(selected_roles: list[BlueprintRoleRecord]) -> list[BlueprintSectionRecord]:
+def build_sections(
+    selected_roles: list[BlueprintRoleRecord],
+) -> list[BlueprintSectionRecord]:
     return [
         BlueprintSectionRecord(key="header", label="Header", included=True, maxItems=1),
         BlueprintSectionRecord(key="skills", label="Skills", included=True, maxItems=8),
@@ -260,7 +264,9 @@ def build_role_rationale(
             f"{source_text}."
         )
 
-    return f"This role carries the strongest available draft-safe evidence{source_text}."
+    return (
+        f"This role carries the strongest available draft-safe evidence{source_text}."
+    )
 
 
 def build_bullet_rationale(text: str, keyword_priorities: list[str]) -> str:
@@ -334,4 +340,8 @@ def match_terms(text: str, keyword_priorities: list[str]) -> list[str]:
 
 
 def tokenize(text: str) -> list[str]:
-    return [token for token in text.lower().replace("/", " ").replace("-", " ").split() if token]
+    return [
+        token
+        for token in text.lower().replace("/", " ").replace("-", " ").split()
+        if token
+    ]

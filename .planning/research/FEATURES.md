@@ -8,29 +8,29 @@
 
 ### Table Stakes (Users Expect These)
 
-| Feature | Why Expected | Complexity | Notes |
-|---------|--------------|------------|-------|
-| Role-specific JD analysis | Resume tools must understand the target role before rewriting | MEDIUM | This is the minimum bar for relevance |
-| Resume drafting and revision | Users expect an editable draft, not only advice | MEDIUM | Markdown output is sufficient for MVP |
-| Persistent user memory | The product thesis depends on retaining prior context | HIGH | Must support facts, provenance, and reuse |
-| Authentication and private workspace | Career history and resume artifacts are personal data | MEDIUM | MVP can stay single-user scoped |
+| Feature                              | Why Expected                                                  | Complexity | Notes                                     |
+| ------------------------------------ | ------------------------------------------------------------- | ---------- | ----------------------------------------- |
+| Role-specific JD analysis            | Resume tools must understand the target role before rewriting | MEDIUM     | This is the minimum bar for relevance     |
+| Resume drafting and revision         | Users expect an editable draft, not only advice               | MEDIUM     | Markdown output is sufficient for MVP     |
+| Persistent user memory               | The product thesis depends on retaining prior context         | HIGH       | Must support facts, provenance, and reuse |
+| Authentication and private workspace | Career history and resume artifacts are personal data         | MEDIUM     | MVP can stay single-user scoped           |
 
 ### Differentiators (Competitive Advantage)
 
-| Feature | Value Proposition | Complexity | Notes |
-|---------|-------------------|------------|-------|
-| Visible multi-agent orchestration | Makes the product teachable, inspectable, and more trustworthy | HIGH | Must avoid overwhelming the user |
-| Career vault with many candidate bullets per experience | Lets one role support multiple narratives for different jobs | HIGH | Central to long-term leverage |
-| Research-backed narrative strategy | Connects JD, company, and market context to resume angle | HIGH | Needs citations and concise summaries |
-| Evaluator-guided targeted revisions | Makes the system act like a strategist, not just a writer | MEDIUM | Strong fit with the typed stage model |
+| Feature                                                 | Value Proposition                                              | Complexity | Notes                                 |
+| ------------------------------------------------------- | -------------------------------------------------------------- | ---------- | ------------------------------------- |
+| Visible multi-agent orchestration                       | Makes the product teachable, inspectable, and more trustworthy | HIGH       | Must avoid overwhelming the user      |
+| Career vault with many candidate bullets per experience | Lets one role support multiple narratives for different jobs   | HIGH       | Central to long-term leverage         |
+| Research-backed narrative strategy                      | Connects JD, company, and market context to resume angle       | HIGH       | Needs citations and concise summaries |
+| Evaluator-guided targeted revisions                     | Makes the system act like a strategist, not just a writer      | MEDIUM     | Strong fit with the typed stage model |
 
 ### Anti-Features (Commonly Requested, Often Problematic)
 
-| Feature | Why Requested | Why Problematic | Alternative |
-|---------|---------------|-----------------|-------------|
-| Full black-box autonomous rewriting | Seems faster and more magical | Destroys trust, hides unsupported claims, and undermines the learning goal | Keep visible checkpoints and approval gates |
-| Huge upfront multi-section questionnaires | Seems efficient for data collection | Feels like homework and slows first value | Interview one role/story thread at a time |
-| Single canonical bullet set per experience | Simpler storage model | Breaks the product thesis that one experience can support many job narratives | Store many candidate bullets linked to facts |
+| Feature                                    | Why Requested                       | Why Problematic                                                               | Alternative                                  |
+| ------------------------------------------ | ----------------------------------- | ----------------------------------------------------------------------------- | -------------------------------------------- |
+| Full black-box autonomous rewriting        | Seems faster and more magical       | Destroys trust, hides unsupported claims, and undermines the learning goal    | Keep visible checkpoints and approval gates  |
+| Huge upfront multi-section questionnaires  | Seems efficient for data collection | Feels like homework and slows first value                                     | Interview one role/story thread at a time    |
+| Single canonical bullet set per experience | Simpler storage model               | Breaks the product thesis that one experience can support many job narratives | Store many candidate bullets linked to facts |
 
 ## Feature Dependencies
 
@@ -77,21 +77,21 @@ Frontend Workspace
 
 ## Feature Prioritization Matrix
 
-| Feature | User Value | Implementation Cost | Priority |
-|---------|------------|---------------------|----------|
-| Career vault + provenance | HIGH | HIGH | P1 |
-| JD analysis + research | HIGH | MEDIUM | P1 |
-| Blueprint + draft + evaluator loop | HIGH | HIGH | P1 |
-| Inline artifact approvals | HIGH | MEDIUM | P1 |
-| Collaboration and sharing | MEDIUM | HIGH | P3 |
+| Feature                            | User Value | Implementation Cost | Priority |
+| ---------------------------------- | ---------- | ------------------- | -------- |
+| Career vault + provenance          | HIGH       | HIGH                | P1       |
+| JD analysis + research             | HIGH       | MEDIUM              | P1       |
+| Blueprint + draft + evaluator loop | HIGH       | HIGH                | P1       |
+| Inline artifact approvals          | HIGH       | MEDIUM              | P1       |
+| Collaboration and sharing          | MEDIUM     | HIGH                | P3       |
 
 ## Competitor Feature Analysis
 
-| Feature | Competitor A | Competitor B | Our Approach |
-|---------|--------------|--------------|--------------|
-| Resume rewrite | Generic single prompt | Template-led draft | Typed, multi-stage, approval-gated drafting |
-| Memory | Usually ephemeral | Limited saved docs | Structured career vault with facts + many bullets |
-| Transparency | Mostly black box | Partial hints | Trace summaries, citations, diffs, scorecards |
+| Feature        | Competitor A          | Competitor B       | Our Approach                                      |
+| -------------- | --------------------- | ------------------ | ------------------------------------------------- |
+| Resume rewrite | Generic single prompt | Template-led draft | Typed, multi-stage, approval-gated drafting       |
+| Memory         | Usually ephemeral     | Limited saved docs | Structured career vault with facts + many bullets |
+| Transparency   | Mostly black box      | Partial hints      | Trace summaries, citations, diffs, scorecards     |
 
 ## Sources
 
@@ -100,5 +100,6 @@ Frontend Workspace
 - Detailed market validation should happen during Phase 3 planning
 
 ---
-*Feature research for: agentic resume optimization platform*
-*Researched: 2026-04-05*
+
+_Feature research for: agentic resume optimization platform_
+_Researched: 2026-04-05_

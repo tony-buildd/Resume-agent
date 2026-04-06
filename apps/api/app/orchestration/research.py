@@ -14,7 +14,6 @@ from app.orchestration.contracts import (
     ResearchSummaryRecord,
 )
 
-
 STOPWORDS = {
     "about",
     "across",
@@ -49,18 +48,48 @@ STOPWORDS = {
 }
 
 PRIMARY_FOCUS_KEYWORDS: dict[str, set[str]] = {
-    "backend": {"api", "backend", "distributed", "microservice", "services", "python", "java", "go"},
-    "frontend": {"frontend", "react", "typescript", "ui", "ux", "design", "accessibility"},
+    "backend": {
+        "api",
+        "backend",
+        "distributed",
+        "microservice",
+        "services",
+        "python",
+        "java",
+        "go",
+    },
+    "frontend": {
+        "frontend",
+        "react",
+        "typescript",
+        "ui",
+        "ux",
+        "design",
+        "accessibility",
+    },
     "full-stack": {"full stack", "full-stack", "end-to-end", "frontend", "backend"},
-    "platform": {"platform", "infrastructure", "reliability", "ci/cd", "devops", "kubernetes"},
+    "platform": {
+        "platform",
+        "infrastructure",
+        "reliability",
+        "ci/cd",
+        "devops",
+        "kubernetes",
+    },
     "data": {"data", "etl", "warehouse", "analytics", "pipeline", "spark", "airflow"},
     "ai": {"llm", "ml", "machine learning", "ai", "prompt", "agent", "rag"},
 }
 
 ARCHETYPE_KEYWORDS: list[tuple[str, set[str]]] = [
     ("AI workflow builder", {"llm", "agent", "prompt", "automation", "ocr"}),
-    ("platform and systems optimizer", {"reliability", "platform", "latency", "scale", "infrastructure"}),
-    ("product and integration builder", {"customer", "product", "feature", "integration", "ship"}),
+    (
+        "platform and systems optimizer",
+        {"reliability", "platform", "latency", "scale", "infrastructure"},
+    ),
+    (
+        "product and integration builder",
+        {"customer", "product", "feature", "integration", "ship"},
+    ),
     ("data pipeline builder", {"data", "pipeline", "warehouse", "analytics", "batch"}),
 ]
 
@@ -226,7 +255,10 @@ def extract_top_requirements(lines: list[str], normalized: str) -> list[str]:
     candidates = [
         line
         for line in lines
-        if any(token in line.lower() for token in (":", "experience", "build", "design", "develop", "knowledge"))
+        if any(
+            token in line.lower()
+            for token in (":", "experience", "build", "design", "develop", "knowledge")
+        )
     ]
     if len(candidates) >= 5:
         return candidates[:5]
@@ -271,7 +303,17 @@ def guess_archetype(normalized: str) -> str:
 def guess_business_impact(lines: list[str]) -> str:
     for line in lines:
         lower = line.lower()
-        if any(token in lower for token in ("customer", "revenue", "efficiency", "latency", "scale", "growth")):
+        if any(
+            token in lower
+            for token in (
+                "customer",
+                "revenue",
+                "efficiency",
+                "latency",
+                "scale",
+                "growth",
+            )
+        ):
             return line
     return "Business impact is implied but not stated explicitly."
 
@@ -280,7 +322,10 @@ def extract_success_definition(lines: list[str]) -> list[str]:
     candidates = [
         line
         for line in lines
-        if any(token in line.lower() for token in ("you will", "responsible", "deliver", "improve", "own"))
+        if any(
+            token in line.lower()
+            for token in ("you will", "responsible", "deliver", "improve", "own")
+        )
     ]
     return candidates[:3] or lines[:3]
 
@@ -300,7 +345,10 @@ def extract_company_name(job_description: str) -> str | None:
 def extract_role_title(job_description: str) -> str | None:
     lines = [line.strip() for line in job_description.splitlines() if line.strip()]
     for line in lines[:5]:
-        if len(line) < 80 and any(token in line.lower() for token in ("engineer", "developer", "manager", "scientist")):
+        if len(line) < 80 and any(
+            token in line.lower()
+            for token in ("engineer", "developer", "manager", "scientist")
+        ):
             return line
     return None
 
@@ -321,7 +369,11 @@ def extract_sources_from_payload(payload: dict[str, Any]) -> list[ResearchSource
                         ResearchSourceRecord(
                             title=title,
                             url=url if isinstance(url, str) else None,
-                            note=node.get("snippet") if isinstance(node.get("snippet"), str) else None,
+                            note=(
+                                node.get("snippet")
+                                if isinstance(node.get("snippet"), str)
+                                else None
+                            ),
                         )
                     )
             for value in node.values():

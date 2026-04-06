@@ -13,10 +13,22 @@ provides:
 affects: [phase-1, phase-2, orchestration, ui, observability]
 tech-stack:
   added: [pydantic-contracts, runtime-shell]
-  patterns: [auto-run-until-interrupt, typed-session-envelope, api-backed-workspace]
+  patterns:
+    [auto-run-until-interrupt, typed-session-envelope, api-backed-workspace]
 key-files:
-  created: [apps/api/app/orchestration/contracts.py, apps/api/app/orchestration/runtime.py, apps/web/src/lib/api/sessions.ts, docs/architecture/foundation-contracts.md]
-  modified: [apps/api/app/api/routes/sessions.py, apps/web/src/app/(workspace)/workspace/page.tsx, .env.example]
+  created:
+    [
+      apps/api/app/orchestration/contracts.py,
+      apps/api/app/orchestration/runtime.py,
+      apps/web/src/lib/api/sessions.ts,
+      docs/architecture/foundation-contracts.md,
+    ]
+  modified:
+    [
+      apps/api/app/api/routes/sessions.py,
+      apps/web/src/app/(workspace)/workspace/page.tsx,
+      .env.example,
+    ]
 key-decisions:
   - "Use a deterministic runtime shell in phase 1 so later LangGraph orchestration can replace internals without changing external contracts."
   - "Persist artifacts and trace events at every boundary so the workspace can render actual session history immediately."
@@ -42,6 +54,7 @@ completed: 2026-04-05
 - **Files modified:** 8
 
 ## Accomplishments
+
 - Added the first typed orchestration contract layer for runtime stage, artifacts, trace events, and session envelopes.
 - Built a deterministic session runtime that advances through interrupt and approval boundaries while persisting artifacts and trace messages.
 - Replaced the protected workspace placeholder with an API-backed session view and documented the foundation contract for later phases.
@@ -57,6 +70,7 @@ Each task was committed atomically:
 **Plan metadata:** `33d4005` (post-verification workspace lint fix)
 
 ## Files Created/Modified
+
 - `apps/api/app/orchestration/contracts.py` - Typed runtime/session contract models
 - `apps/api/app/orchestration/runtime.py` - Deterministic advance/resume shell with artifact and trace persistence
 - `apps/api/app/api/routes/sessions.py` - Session create/read/advance API wired to the runtime shell
@@ -66,6 +80,7 @@ Each task was committed atomically:
 - `docs/architecture/foundation-contracts.md` - Extension rules for auth, session, artifact, and trace contracts
 
 ## Decisions Made
+
 - Kept the phase-one runtime deterministic so the product gets explicit contracts and persisted state before introducing a full agent graph.
 - Made session creation auto-advance to the first interrupt boundary to prove the orchestrator lifecycle rule early.
 - Chose to surface setup failures directly in the workspace UI rather than silently falling back to fake data.
@@ -75,6 +90,7 @@ Each task was committed atomically:
 ### Auto-fixed Issues
 
 **1. Workspace error handling violated the React lint rule for try/catch + JSX**
+
 - **Found during:** Final web lint verification
 - **Issue:** The workspace page rendered JSX directly inside a `try/catch`, which the React lint rules reject.
 - **Fix:** Moved loading/error branching into a separate async loader function and kept rendering branches outside the `try/catch`.
@@ -88,20 +104,24 @@ Each task was committed atomically:
 **Impact on plan:** No scope change. The fix was required to keep the workspace route shippable under the current lint rules.
 
 ## Issues Encountered
+
 - Full live verification against Clerk + Postgres is still blocked by missing external credentials and services, so API lifecycle verification used an isolated SQLite URL in-process to validate the runtime contracts.
 
 ## User Setup Required
 
 Still required from `01-02`:
+
 - `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`
 - `CLERK_SECRET_KEY`
 - `DATABASE_URL`
 - optional `RESUME_AGENT_API_URL` if the API is not running on `http://127.0.0.1:8000`
 
 ## Next Phase Readiness
+
 - Phase 1 implementation is complete and ready for UAT/verification.
 - Phase 2 can build the career vault on top of stable session envelopes, artifact persistence, and trace events once Phase 1 verification is accepted.
 
 ---
-*Phase: 01-foundations*
-*Completed: 2026-04-05*
+
+_Phase: 01-foundations_
+_Completed: 2026-04-05_

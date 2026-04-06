@@ -12,9 +12,22 @@ provides:
 affects: [phase-1, auth, api, ui, onboarding]
 tech-stack:
   added: [nextjs, react, fastapi, uvicorn, pnpm-workspace]
-  patterns: [split-app repo layout, repo-level bootstrap scripts, web-first workspace shell]
+  patterns:
+    [
+      split-app repo layout,
+      repo-level bootstrap scripts,
+      web-first workspace shell,
+    ]
 key-files:
-  created: [package.json, pnpm-workspace.yaml, apps/web/package.json, apps/web/src/app/page.tsx, apps/api/pyproject.toml, apps/api/app/main.py]
+  created:
+    [
+      package.json,
+      pnpm-workspace.yaml,
+      apps/web/package.json,
+      apps/web/src/app/page.tsx,
+      apps/api/pyproject.toml,
+      apps/api/app/main.py,
+    ]
   modified: [.gitignore, README.md]
 key-decisions:
   - "Use a repo-level pnpm workspace instead of leaving the generated web app isolated."
@@ -40,6 +53,7 @@ completed: 2026-04-05
 - **Files modified:** 24
 
 ## Accomplishments
+
 - Normalized the repo into a root-managed workspace with `apps/web` and `apps/api`.
 - Replaced the default frontend starter copy with a Resume Agent foundation shell.
 - Added a minimal FastAPI application package and documented local bootstrap commands.
@@ -55,6 +69,7 @@ Each task was committed atomically:
 **Plan metadata:** `33a364f` (current plan execution checkpoint)
 
 ## Files Created/Modified
+
 - `package.json` - Root workspace scripts for web and API development
 - `pnpm-workspace.yaml` - Repo-level pnpm workspace configuration
 - `apps/web/package.json` - Next.js app package metadata
@@ -64,6 +79,7 @@ Each task was committed atomically:
 - `README.md` - Bootstrap and workflow documentation
 
 ## Decisions Made
+
 - Used the current `create-next-app` output as the frontend base, then normalized it into the repo-level workspace.
 - Kept the Python service minimal and installable before adding auth or persistence concerns.
 - Documented `python -m venv` for local backend setup because `uv` is not installed in the current environment.
@@ -73,6 +89,7 @@ Each task was committed atomically:
 ### Auto-fixed Issues
 
 **1. Generator path issue during frontend scaffolding**
+
 - **Found during:** Task 1 (workspace scaffold)
 - **Issue:** `create-next-app` initially failed the writability check when targeting `apps/web` directly.
 - **Fix:** Created the `apps/` directory explicitly and reran the generator successfully.
@@ -86,6 +103,7 @@ Each task was committed atomically:
 **Impact on plan:** No scope change. The fix only stabilized scaffolding.
 
 ## Issues Encountered
+
 - The frontend generator installed app-local workspace artifacts (`pnpm-lock.yaml`, `pnpm-workspace.yaml`, `AGENTS.md`, `CLAUDE.md`). These were removed so the repo keeps a single root workspace and project guide.
 
 ## User Setup Required
@@ -93,9 +111,11 @@ Each task was committed atomically:
 None - no external service configuration required.
 
 ## Next Phase Readiness
+
 - `01-02` can now add auth and persistence on top of a stable repo/app structure.
 - Root `pnpm install`, frontend lint/typecheck/build, and backend import verification all passed.
 
 ---
-*Phase: 01-foundations*
-*Completed: 2026-04-05*
+
+_Phase: 01-foundations_
+_Completed: 2026-04-05_

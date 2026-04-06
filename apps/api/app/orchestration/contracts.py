@@ -151,7 +151,9 @@ class BlueprintRoleRecord(BaseModel):
     role_title: str = Field(alias="roleTitle")
     why_selected: str = Field(alias="whySelected")
     selected_bullets: list[BlueprintBulletRecord] = Field(alias="selectedBullets")
-    selected_story_names: list[str] = Field(default_factory=list, alias="selectedStoryNames")
+    selected_story_names: list[str] = Field(
+        default_factory=list, alias="selectedStoryNames"
+    )
 
 
 class BlueprintSectionRecord(BaseModel):
