@@ -89,6 +89,8 @@ def retrieve_vault(
         user=user,
         query=payload.query,
         limit=payload.limit,
+        story_limit=payload.story_limit,
+        evidence_limit=payload.evidence_limit,
         include_semantic=payload.include_semantic,
     )
 

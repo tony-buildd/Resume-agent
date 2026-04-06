@@ -15,12 +15,18 @@ from app.db.models import (
 )
 from pydantic import BaseModel
 
+from app.orchestration.capabilities import plan_capability_route
 from app.orchestration.blueprint import build_narrative_blueprint
+from app.orchestration.context_budget import apply_context_budget
 from app.orchestration.contracts import (
     AdvanceSessionResponse,
+    CapabilityRouteSummaryRecord,
+    ContextBudgetSummaryRecord,
     EvaluationScorecardRecord,
     InterrogationPromptRecord,
+    InterruptionType,
     JDAnalysisRecord,
+    MemoryRiskSummaryRecord,
     NarrativeBlueprintRecord,
     InterruptReason,
     ResearchSummaryRecord,
@@ -30,9 +36,13 @@ from app.orchestration.contracts import (
     SessionEnvelope,
     StageKey,
     StageStatus,
+    TrajectoryEvaluationSummaryRecord,
 )
 from app.orchestration.drafting import build_resume_package
-from app.orchestration.evaluation import evaluate_resume_package
+from app.orchestration.evaluation import (
+    build_trajectory_summary,
+    evaluate_resume_package,
+)
 from app.orchestration.interrogation import (
     build_canonical_session_context,
     build_interrogation_prompt,
@@ -40,7 +50,12 @@ from app.orchestration.interrogation import (
 from app.orchestration.research import generate_jd_analysis_bundle
 from app.vault.contracts import GuidedRoleCaptureRequest, StoryCheckpointRecord
 from app.vault.ingestion import build_guided_capture_request, extract_statements
-from app.vault.service import create_vault_role_tree, serialize_vault_role
+from app.vault.safety import summarize_memory_risks
+from app.vault.service import (
+    create_vault_role_tree,
+    list_vault_roles,
+    serialize_vault_role,
+)
 
 STAGE_LABELS: dict[StageKey, str] = {
     StageKey.BOOTSTRAP: "Bootstrap",
@@ -66,16 +81,23 @@ def ensure_runtime_state(record: SessionRecord) -> dict[str, Any]:
     runtime.setdefault("current_stage", record.stage or StageKey.BOOTSTRAP.value)
     runtime.setdefault("stage_status", StageStatus.PENDING.value)
     runtime.setdefault("interrupt_reason", InterruptReason.NONE.value)
+    runtime.setdefault("interruption_type", None)
+    runtime.setdefault("replan_from_stage", None)
     runtime.setdefault("stage_history", [runtime["current_stage"]])
     runtime.setdefault("answers", {})
     runtime.setdefault("canonical_session_context", {})
     runtime.setdefault("transitions", [])
+    runtime.setdefault("memory_risk_summary", None)
+    runtime.setdefault("context_budget_summary", None)
+    runtime.setdefault("capability_route_summary", None)
+    runtime.setdefault("trajectory_evaluation_summary", None)
     runtime.setdefault("jd_analysis_artifact_id", None)
     runtime.setdefault("research_summary_artifact_id", None)
     runtime.setdefault("blueprint_artifact_id", None)
     runtime.setdefault("draft_package_artifact_id", None)
     runtime.setdefault("evaluation_artifact_id", None)
     runtime.setdefault("flow", "resume_session")
+    runtime.setdefault("last_memory_risk_signature", None)
     runtime.setdefault("updated_at", utc_now().isoformat())
     snapshot["runtime"] = runtime
     record.state_snapshot = snapshot
@@ -168,11 +190,24 @@ def transition_to(
     *,
     status: StageStatus,
     interrupt_reason: InterruptReason = InterruptReason.NONE,
+    interruption_type: InterruptionType | None = None,
+    replan_from_stage: StageKey | None = None,
+    preserve_replan_context: bool = False,
 ) -> None:
     record.stage = stage.value
     runtime["current_stage"] = stage.value
     runtime["stage_status"] = status.value
     runtime["interrupt_reason"] = interrupt_reason.value
+    if preserve_replan_context:
+        runtime.setdefault("interruption_type", None)
+        runtime.setdefault("replan_from_stage", None)
+    else:
+        runtime["interruption_type"] = (
+            interruption_type.value if interruption_type else None
+        )
+        runtime["replan_from_stage"] = (
+            replan_from_stage.value if replan_from_stage else None
+        )
     runtime["updated_at"] = utc_now().isoformat()
 
     if not runtime["stage_history"] or runtime["stage_history"][-1] != stage.value:
@@ -194,6 +229,7 @@ def interrupt_session(
         stage,
         status=StageStatus.INTERRUPTED,
         interrupt_reason=reason,
+        preserve_replan_context=True,
     )
     record.status = SessionStatus.INTERRUPTED
     append_trace(
@@ -204,6 +240,96 @@ def interrupt_session(
         payload={"interruptReason": reason.value},
     )
     return message
+
+
+def determine_replan_stage(
+    *,
+    current_stage: StageKey,
+    interruption_type: InterruptionType,
+    suggested_stage: StageKey | None = None,
+) -> StageKey:
+    if suggested_stage is not None:
+        return suggested_stage
+
+    if interruption_type in {
+        InterruptionType.ADD_REQUIREMENT,
+        InterruptionType.REVISE_REQUIREMENT,
+        InterruptionType.RETRACT_REQUIREMENT,
+    }:
+        if current_stage in {StageKey.BOOTSTRAP, StageKey.JD_INTAKE}:
+            return StageKey.JD_ANALYSIS_REVIEW
+        return StageKey.BLUEPRINT_REVIEW
+
+    if interruption_type in {
+        InterruptionType.CLARIFY_FACT,
+        InterruptionType.RISK_FLAG,
+    }:
+        if current_stage in {
+            StageKey.BOOTSTRAP,
+            StageKey.JD_INTAKE,
+            StageKey.JD_ANALYSIS_REVIEW,
+        }:
+            return StageKey.CAREER_INTAKE
+        return StageKey.CAREER_INTAKE
+
+    return StageKey.DRAFT_REVIEW
+
+
+def request_runtime_replan(
+    db: Session,
+    record: SessionRecord,
+    runtime: dict[str, Any],
+    *,
+    interruption_type: InterruptionType,
+    note: str | None,
+    source_stage: StageKey,
+    suggested_stage: StageKey | None = None,
+) -> str:
+    replan_target = determine_replan_stage(
+        current_stage=source_stage,
+        interruption_type=interruption_type,
+        suggested_stage=suggested_stage,
+    )
+    record.status = SessionStatus.RUNNING
+    runtime["updated_at"] = utc_now().isoformat()
+
+    upsert_stage_artifact(
+        db,
+        record,
+        stage=replan_target,
+        kind="interruption-request",
+        status=ArtifactStatus.CANONICAL,
+        title=f"Runtime replan: {interruption_type.value}",
+        summary=(
+            "A runtime interruption requested a targeted rerun from the earliest affected stage."
+        ),
+        payload={
+            "sourceStage": source_stage.value,
+            "interruptionType": interruption_type.value,
+            "replanFromStage": replan_target.value,
+            "note": note,
+        },
+    )
+    append_trace(
+        db,
+        record,
+        stage=source_stage,
+        message="Runtime interruption requested a targeted rerun from the earliest affected stage.",
+        payload={
+            "interruptionType": interruption_type.value,
+            "replanFromStage": replan_target.value,
+            "note": note,
+        },
+    )
+    transition_to(
+        record,
+        runtime,
+        replan_target,
+        status=StageStatus.RUNNING,
+        interruption_type=interruption_type,
+        replan_from_stage=replan_target,
+    )
+    return f"{source_stage.value}_to_{replan_target.value}"
 
 
 def mark_blueprint_approved(record: SessionRecord, runtime: dict[str, Any]) -> None:
@@ -284,6 +410,74 @@ def mark_vault_checkpoint_approved(
 
 def serialize_model_payload(model: BaseModel) -> dict[str, Any]:
     return model.model_dump(by_alias=True, mode="json")
+
+
+def refresh_memory_risk_summary(
+    db: Session,
+    record: SessionRecord,
+    runtime: dict[str, Any],
+    *,
+    stage: StageKey,
+) -> dict[str, Any]:
+    roles = [serialize_vault_role(item) for item in list_vault_roles(db, user=record.user)]
+    summary = summarize_memory_risks(roles)
+    runtime["memory_risk_summary"] = summary
+
+    signature = (
+        f"{summary['quarantinedItems']}:"
+        f"{summary['highRiskItems']}:"
+        f"{summary['failedFeasibilityItems']}"
+    )
+    upsert_stage_artifact(
+        db,
+        record,
+        stage=stage,
+        kind="memory-risk-summary",
+        status=ArtifactStatus.CANONICAL,
+        title="Memory risk summary",
+        summary="Current quarantine and feasibility state across vault evidence.",
+        payload={"summary": summary},
+    )
+    if summary["notes"] and runtime.get("last_memory_risk_signature") != signature:
+        runtime["last_memory_risk_signature"] = signature
+        append_trace(
+            db,
+            record,
+            stage=stage,
+            message="Memory safety summary updated with questioning-only evidence counts.",
+            payload=summary,
+            level=EventLevel.WARNING,
+        )
+    return summary
+
+
+def refresh_context_budget_summary(
+    db: Session,
+    record: SessionRecord,
+    runtime: dict[str, Any],
+    *,
+    stage: StageKey,
+) -> dict[str, Any]:
+    budgeted_context, summary = apply_context_budget(
+        runtime.get("canonical_session_context") or {},
+        stage=stage,
+    )
+    runtime["budgeted_canonical_context"] = budgeted_context
+    runtime["context_budget_summary"] = serialize_model_payload(summary)
+    upsert_stage_artifact(
+        db,
+        record,
+        stage=stage,
+        kind="context-budget-summary",
+        status=ArtifactStatus.CANONICAL,
+        title="Context budget summary",
+        summary="Stage-specific context budgeting and compression decisions.",
+        payload={
+            "summary": runtime["context_budget_summary"],
+            "budgetedContext": budgeted_context,
+        },
+    )
+    return budgeted_context
 
 
 def parse_jd_analysis(runtime: dict[str, Any]) -> JDAnalysisRecord:
@@ -534,6 +728,8 @@ def advance_session(
     approve_checkpoint: bool = False,
     accept_draft_review: bool = False,
     request_revision: bool = False,
+    interruption_type: InterruptionType | None = None,
+    interruption_note: str | None = None,
 ) -> AdvanceSessionResponse:
     runtime = ensure_runtime_state(record)
     latest_answer = answer.strip() if answer else None
@@ -554,6 +750,17 @@ def advance_session(
             interrupted=record.status == SessionStatus.INTERRUPTED,
             envelope=build_session_envelope(record),
         )
+
+    if interruption_type is not None:
+        transition_message = request_runtime_replan(
+            db,
+            record,
+            runtime,
+            interruption_type=interruption_type,
+            note=interruption_note or latest_answer,
+            source_stage=StageKey(runtime["current_stage"]),
+        )
+        latest_answer = None
 
     while True:
         stage = StageKey(runtime["current_stage"])
@@ -601,9 +808,29 @@ def advance_session(
                 break
 
             runtime["answers"]["jobDescription"] = latest_answer
-            analysis, research = generate_jd_analysis_bundle(latest_answer)
-            runtime["job_constraint_profile"] = serialize_model_payload(analysis)
-            runtime["research_summary"] = serialize_model_payload(research)
+            capability_route = plan_capability_route(job_description=latest_answer)
+            runtime["capability_route_summary"] = serialize_model_payload(
+                capability_route.summary
+            )
+            research_bundle = generate_jd_analysis_bundle(
+                latest_answer,
+                route=capability_route,
+            )
+            runtime["job_constraint_profile"] = serialize_model_payload(
+                research_bundle.analysis
+            )
+            runtime["research_summary"] = serialize_model_payload(
+                research_bundle.research_summary
+            )
+            runtime["research_plan"] = serialize_model_payload(
+                research_bundle.research_plan
+            )
+            runtime["source_bundle"] = serialize_model_payload(
+                research_bundle.source_bundle
+            )
+            runtime["strategy_synthesis"] = serialize_model_payload(
+                research_bundle.strategy_synthesis
+            )
 
             jd_analysis = upsert_stage_artifact(
                 db,
@@ -631,13 +858,54 @@ def advance_session(
                     "research": runtime["research_summary"],
                 },
             )
+            upsert_stage_artifact(
+                db,
+                record,
+                stage=StageKey.JD_ANALYSIS_REVIEW,
+                kind="research-plan",
+                status=ArtifactStatus.CANDIDATE,
+                title="Research planning artifact",
+                summary="Subquestions and route preferences for the JD research pass.",
+                payload=runtime["research_plan"],
+            )
+            upsert_stage_artifact(
+                db,
+                record,
+                stage=StageKey.JD_ANALYSIS_REVIEW,
+                kind="source-bundle",
+                status=ArtifactStatus.CANDIDATE,
+                title="Research source bundle",
+                summary="Collected sources and citations that fed the strategy synthesis.",
+                payload=runtime["source_bundle"],
+            )
+            upsert_stage_artifact(
+                db,
+                record,
+                stage=StageKey.JD_ANALYSIS_REVIEW,
+                kind="strategy-synthesis",
+                status=ArtifactStatus.CANDIDATE,
+                title="Strategy synthesis artifact",
+                summary="Confidence-tagged strategy synthesis built from the routed research source bundle.",
+                payload=runtime["strategy_synthesis"],
+            )
+            upsert_stage_artifact(
+                db,
+                record,
+                stage=StageKey.JD_ANALYSIS_REVIEW,
+                kind="capability-route",
+                status=ArtifactStatus.CANDIDATE,
+                title="Capability routing decision",
+                summary="The runtime selected a research route and recorded which capabilities were considered, selected, or deferred.",
+                payload=serialize_model_payload(capability_route),
+            )
             runtime["jd_analysis_artifact_id"] = jd_analysis.id
             runtime["research_summary_artifact_id"] = research_summary.id
             append_trace(
                 db,
                 record,
                 stage=stage,
-                message="Captured job description input and prepared JD analysis and research artifacts.",
+                message="Captured job description input and prepared JD analysis, research, and capability-route artifacts.",
+                payload=runtime["capability_route_summary"],
             )
             latest_answer = None
             transition_to(
@@ -678,6 +946,12 @@ def advance_session(
             continue
 
         if stage is StageKey.CAREER_INTAKE:
+            refresh_memory_risk_summary(
+                db,
+                record,
+                runtime,
+                stage=stage,
+            )
             jd_analysis = parse_jd_analysis(runtime)
             research_summary = parse_research_summary(runtime)
             interrogation_prompt = build_interrogation_prompt(
@@ -720,6 +994,12 @@ def advance_session(
                 prompt=interrogation_prompt,
                 answer=latest_answer,
             )
+            refresh_context_budget_summary(
+                db,
+                record,
+                runtime,
+                stage=stage,
+            )
             upsert_stage_artifact(
                 db,
                 record,
@@ -751,15 +1031,27 @@ def advance_session(
             continue
 
         if stage is StageKey.BLUEPRINT_REVIEW:
+            refresh_memory_risk_summary(
+                db,
+                record,
+                runtime,
+                stage=stage,
+            )
             jd_analysis = parse_jd_analysis(runtime)
             research_summary = parse_research_summary(runtime)
-            blueprint_record = build_narrative_blueprint(
+            blueprint_result = build_narrative_blueprint(
                 db,
                 user=record.user,
                 analysis=jd_analysis,
                 research=research_summary,
-                canonical_context=runtime["canonical_session_context"],
+                canonical_context=refresh_context_budget_summary(
+                    db,
+                    record,
+                    runtime,
+                    stage=stage,
+                ),
             )
+            blueprint_record = blueprint_result.blueprint
             runtime["narrative_blueprint"] = serialize_model_payload(blueprint_record)
             blueprint = upsert_stage_artifact(
                 db,
@@ -771,6 +1063,16 @@ def advance_session(
                 summary="A one-page narrative blueprint built from approved JD context and draft-safe vault evidence.",
                 payload={
                     "blueprint": runtime["narrative_blueprint"],
+                    "selectionTraces": [
+                        trace.model_dump(by_alias=True, mode="json")
+                        for trace in blueprint_result.selection_traces
+                    ],
+                    "budgetPolicy": {
+                        "maxRoles": blueprint_result.budget_policy.max_roles,
+                        "maxStoriesPerRole": blueprint_result.budget_policy.max_stories_per_role,
+                        "maxBulletsPerStory": blueprint_result.budget_policy.max_bullets_per_story,
+                        "tokenBudgetPerStage": blueprint_result.budget_policy.token_budget_per_stage,
+                    },
                     "approvalState": "pending",
                 },
             )
@@ -827,8 +1129,12 @@ def advance_session(
                 blueprint=blueprint,
                 package=package_record,
                 analysis=parse_jd_analysis(runtime),
+                runtime=runtime,
             )
             runtime["evaluation_scorecard"] = serialize_model_payload(scorecard_record)
+            runtime["trajectory_evaluation_summary"] = serialize_model_payload(
+                build_trajectory_summary(scorecard_record)
+            )
             scorecard_artifact = upsert_stage_artifact(
                 db,
                 record,
@@ -836,28 +1142,26 @@ def advance_session(
                 kind="evaluation-scorecard",
                 status=ArtifactStatus.CANDIDATE,
                 title="Draft evaluation scorecard",
-                summary="Fit, evidence support, specificity, and overstatement risk for the current draft package.",
+                summary="Adaptive rubric scores the draft outcome plus trajectory quality and rerun guidance.",
                 payload=runtime["evaluation_scorecard"],
             )
             runtime["evaluation_artifact_id"] = scorecard_artifact.id
             if request_revision:
-                rerun_target = parse_evaluation_scorecard(runtime).revision_target_stage
+                parsed_scorecard = parse_evaluation_scorecard(runtime)
+                rerun_target = parsed_scorecard.revision_target_stage
+                if parsed_scorecard.rerun_recommendation is not None:
+                    rerun_target = parsed_scorecard.rerun_recommendation.target_stage
                 if rerun_target is StageKey.DRAFT_REVIEW:
                     rerun_target = StageKey.BLUEPRINT_REVIEW
-                append_trace(
+                transition_message = request_runtime_replan(
                     db,
                     record,
-                    stage=stage,
-                    message="Draft review requested a targeted rerun from the earliest affected stage.",
-                    payload={"rerunTarget": rerun_target.value},
-                )
-                transition_to(
-                    record,
                     runtime,
-                    rerun_target,
-                    status=StageStatus.RUNNING,
+                    interruption_type=InterruptionType.REQUEST_REVISION,
+                    note="Draft review requested a targeted rerun.",
+                    source_stage=stage,
+                    suggested_stage=rerun_target,
                 )
-                transition_message = f"draft_review_to_{rerun_target.value}"
                 continue
 
             if not accept_draft_review:
@@ -978,6 +1282,42 @@ def build_session_envelope(
         status=record.status.value,
         stage=build_stage(record),
         stageHistory=[StageKey(stage) for stage in runtime["stage_history"]],
+        interruptionType=(
+            InterruptionType(runtime["interruption_type"])
+            if runtime.get("interruption_type")
+            else None
+        ),
+        replanFromStage=(
+            StageKey(runtime["replan_from_stage"])
+            if runtime.get("replan_from_stage")
+            else None
+        ),
+        memoryRiskSummary=(
+            MemoryRiskSummaryRecord.model_validate(runtime["memory_risk_summary"])
+            if runtime.get("memory_risk_summary")
+            else None
+        ),
+        contextBudgetSummary=(
+            ContextBudgetSummaryRecord.model_validate(
+                runtime["context_budget_summary"]
+            )
+            if runtime.get("context_budget_summary")
+            else None
+        ),
+        capabilityRouteSummary=(
+            CapabilityRouteSummaryRecord.model_validate(
+                runtime["capability_route_summary"]
+            )
+            if runtime.get("capability_route_summary")
+            else None
+        ),
+        trajectoryEvaluationSummary=(
+            TrajectoryEvaluationSummaryRecord.model_validate(
+                runtime["trajectory_evaluation_summary"]
+            )
+            if runtime.get("trajectory_evaluation_summary")
+            else None
+        ),
         artifactCount=len(ordered_artifacts),
         traceEventCount=len(ordered_events),
         artifacts=[build_runtime_artifact(artifact) for artifact in ordered_artifacts],

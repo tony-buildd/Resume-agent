@@ -11,6 +11,7 @@ type ArtifactPanelProps = {
   stageKey: StageKey;
   sessionId: string;
   workspaceMode: "resume" | "vault";
+  surfaceMode: "micro" | "sidecar" | "full";
 };
 
 const stageArtifactPriority: Partial<Record<StageKey, string[]>> = {
@@ -18,11 +19,16 @@ const stageArtifactPriority: Partial<Record<StageKey, string[]>> = {
   vault_role_interview: ["vault-question"],
   vault_story_checkpoint: ["vault-checkpoint", "vault-role-record"],
   jd_intake: ["question"],
-  jd_analysis_review: ["jd-analysis", "research-summary"],
+  jd_analysis_review: [
+    "strategy-synthesis",
+    "jd-analysis",
+    "capability-route",
+    "research-summary",
+  ],
   career_intake: ["interrogation-question", "session-context"],
   blueprint_review: ["blueprint", "session-context"],
-  draft_review: ["draft-package", "evaluation-scorecard"],
-  complete: ["draft-package", "evaluation-scorecard", "blueprint"],
+  draft_review: ["evaluation-scorecard", "draft-package"],
+  complete: ["evaluation-scorecard", "draft-package", "blueprint"],
 };
 
 export function ArtifactPanel({
@@ -33,6 +39,7 @@ export function ArtifactPanel({
   stageKey,
   sessionId,
   workspaceMode,
+  surfaceMode,
 }: ArtifactPanelProps) {
   return (
     <section className="rounded-[30px] border border-slate-200/80 bg-white/96 p-6 shadow-[0_24px_80px_-42px_rgba(15,23,42,0.4)]">
@@ -66,6 +73,7 @@ export function ArtifactPanel({
         stageKey={stageKey}
         sessionId={sessionId}
         workspaceMode={workspaceMode}
+        surfaceMode={surfaceMode}
       />
     </section>
   );
@@ -74,7 +82,17 @@ export function ArtifactPanel({
 export function selectActiveArtifact(
   artifacts: RuntimeArtifact[],
   stageKey: StageKey,
+  preferredArtifactId?: string | null,
 ): RuntimeArtifact | null {
+  if (preferredArtifactId) {
+    const explicitArtifact = artifacts.find(
+      (artifact) => artifact.id === preferredArtifactId,
+    );
+    if (explicitArtifact) {
+      return explicitArtifact;
+    }
+  }
+
   const priorities = stageArtifactPriority[stageKey] ?? [];
   for (const kind of priorities) {
     const artifact = [...artifacts]
@@ -100,6 +118,10 @@ function ArtifactPayload({
       return <JDAnalysisPayload artifact={artifact} />;
     case "research-summary":
       return <ResearchSummaryPayload artifact={artifact} />;
+    case "strategy-synthesis":
+      return <StrategySynthesisPayload artifact={artifact} />;
+    case "capability-route":
+      return <CapabilityRoutePayload artifact={artifact} />;
     case "interrogation-question":
     case "question":
     case "vault-question":
@@ -154,6 +176,85 @@ function ResearchSummaryPayload({ artifact }: { artifact: RuntimeArtifact }) {
         values={readStringArray(research?.sourceNotes)}
         tone="amber"
       />
+    </div>
+  );
+}
+
+function StrategySynthesisPayload({ artifact }: { artifact: RuntimeArtifact }) {
+  const synthesis = readObject(artifact.payload);
+  return (
+    <div className="space-y-4">
+      <MetricRow
+        label="Strategic summary"
+        value={readString(synthesis?.strategicSummary) ?? "Unavailable"}
+      />
+      <MetricRow
+        label="Confidence"
+        value={readString(synthesis?.confidence) ?? "Unavailable"}
+      />
+      <TagList
+        label="Market signals"
+        values={readStringArray(synthesis?.marketSignals)}
+        tone="cyan"
+      />
+      <TagList
+        label="Citations"
+        values={readStringArray(synthesis?.citations)}
+        tone="amber"
+      />
+    </div>
+  );
+}
+
+function CapabilityRoutePayload({ artifact }: { artifact: RuntimeArtifact }) {
+  const summary = readObject(artifact.payload.summary);
+  const selectedCapability = readObject(artifact.payload.selectedCapability);
+  const routeTrace = readArray(artifact.payload.routeTrace)
+    .map((value: unknown) => readObject(value))
+    .filter((value): value is Record<string, unknown> => Boolean(value));
+
+  return (
+    <div className="space-y-4">
+      <MetricRow
+        label="Selected capability"
+        value={readString(selectedCapability?.label) ?? "Unavailable"}
+      />
+      <MetricRow
+        label="Source type"
+        value={readString(summary?.sourceType) ?? "Unavailable"}
+      />
+      <MetricRow
+        label="Confidence"
+        value={readString(summary?.confidence) ?? "Unavailable"}
+      />
+      <TagList
+        label="Route notes"
+        values={readStringArray(summary?.notes)}
+        tone="slate"
+      />
+      <div className="rounded-[20px] border border-slate-200 bg-white px-4 py-4">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+          Route trace
+        </p>
+        <div className="mt-3 space-y-3">
+          {routeTrace.map((step) => (
+            <div
+              key={`${readString(step.capabilityKey) ?? "trace"}-${readString(step.decision) ?? "decision"}`}
+              className="rounded-[16px] border border-slate-200 bg-slate-50 px-3 py-3"
+            >
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                {readString(step.decision) ?? "Decision"}
+              </p>
+              <p className="mt-1 text-sm font-semibold text-slate-950">
+                {readString(step.capabilityKey) ?? "Capability"}
+              </p>
+              <p className="mt-2 text-sm leading-6 text-slate-700">
+                {readString(step.reason) ?? "No reason recorded."}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
@@ -301,17 +402,48 @@ function DraftPackagePayload({
 }
 
 function ScorecardPayload({ artifact }: { artifact: RuntimeArtifact }) {
-  const metrics = [
-    ["Fit", readObject(artifact.payload.fit)],
-    ["Evidence", readObject(artifact.payload.evidenceSupport)],
-    ["Specificity", readObject(artifact.payload.specificity)],
-    ["Risk", readObject(artifact.payload.overstatementRisk)],
-  ] as const;
+  const rubric = readObject(artifact.payload.rubric);
+  const dimensions = readArray(artifact.payload.dimensions)
+    .map((value: unknown) => readObject(value))
+    .filter((value): value is Record<string, unknown> => Boolean(value));
+  const trajectoryJudgments = readArray(artifact.payload.trajectoryJudgments)
+    .map((value: unknown) => readObject(value))
+    .filter((value): value is Record<string, unknown> => Boolean(value));
+  const rerunRecommendation = readObject(artifact.payload.rerunRecommendation);
+  const metrics: Array<[string, Record<string, unknown> | null]> =
+    dimensions.length > 0
+      ? dimensions.map((value) => [
+          readString(value?.label) ?? readString(value?.key) ?? "Dimension",
+          value,
+        ])
+      : ([
+          ["Fit", readObject(artifact.payload.fit)],
+          ["Evidence", readObject(artifact.payload.evidenceSupport)],
+          ["Specificity", readObject(artifact.payload.specificity)],
+          ["Risk", readObject(artifact.payload.overstatementRisk)],
+        ] as const);
 
   return (
     <div className="space-y-4">
+      {rubric ? (
+        <div className="rounded-[20px] border border-slate-200 bg-white px-4 py-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+            Rubric profile
+          </p>
+          <p className="mt-2 text-lg font-semibold text-slate-950">
+            {readString(rubric.profile) ?? "Unknown"}
+          </p>
+          <p className="mt-1 text-sm text-slate-600">
+            {readString(rubric.focus) ?? "No focus summary available."}
+          </p>
+          <p className="mt-3 text-sm leading-6 text-slate-700">
+            {readString(rubric.weightingRationale) ??
+              "No weighting rationale available."}
+          </p>
+        </div>
+      ) : null}
       <div className="grid gap-3 sm:grid-cols-2">
-        {metrics.map(([label, value]) => (
+        {metrics.map(([label, value]: [string, Record<string, unknown> | null]) => (
           <article
             key={label}
             className="rounded-[20px] border border-slate-200 bg-white px-4 py-4"
@@ -328,9 +460,85 @@ function ScorecardPayload({ artifact }: { artifact: RuntimeArtifact }) {
             <p className="mt-2 text-sm leading-6 text-slate-600">
               {readString(value?.rationale) ?? "No rationale available."}
             </p>
+            {value?.weight ? (
+              <p className="mt-2 text-xs font-medium uppercase tracking-[0.14em] text-slate-500">
+                Weight {readNumber(value.weight)?.toFixed(2) ?? "-"}
+              </p>
+            ) : null}
           </article>
         ))}
       </div>
+      {dimensions.length > 0 ? (
+        <div className="rounded-[20px] border border-slate-200 bg-white px-4 py-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+            Evidence highlights
+          </p>
+          <div className="mt-3 grid gap-3">
+            {dimensions.map((value: Record<string, unknown>) => (
+              <div
+                key={readString(value?.key) ?? readString(value?.label) ?? "dimension"}
+                className="rounded-[16px] border border-slate-200 bg-slate-50 px-3 py-3"
+              >
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                  {readString(value?.label) ?? readString(value?.key) ?? "Dimension"}
+                </p>
+                <ul className="mt-2 space-y-1 text-sm leading-6 text-slate-700">
+                  {readArray(value?.evidence).map((entry: unknown, index: number) => (
+                    <li key={`${index}-${String(entry)}`}>• {String(entry)}</li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+      {trajectoryJudgments.length > 0 ? (
+        <div className="rounded-[20px] border border-slate-200 bg-white px-4 py-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+            Trajectory judgments
+          </p>
+          <div className="mt-3 grid gap-3 sm:grid-cols-3">
+            {trajectoryJudgments.map((value: Record<string, unknown>) => (
+              <div
+                key={readString(value?.key) ?? readString(value?.label) ?? "trajectory"}
+                className="rounded-[16px] border border-slate-200 bg-slate-50 px-3 py-3"
+              >
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                  {readString(value?.label) ?? readString(value?.key) ?? "Judgment"}
+                </p>
+                <p className="mt-2 text-xl font-semibold text-slate-950">
+                  {readNumber(value?.score) ?? "-"}
+                  <span className="ml-1 text-sm font-medium text-slate-500">
+                    /5
+                  </span>
+                </p>
+                <p className="mt-2 text-sm leading-6 text-slate-700">
+                  {readString(value?.rationale) ?? "No rationale available."}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+      {rerunRecommendation ? (
+        <div className="rounded-[20px] border border-slate-200 bg-white px-4 py-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+            Rerun recommendation
+          </p>
+          <p className="mt-2 text-sm font-semibold text-slate-950">
+            {readString(rerunRecommendation.targetStage) ?? "No rerun target"}
+          </p>
+          <p className="mt-2 text-sm leading-6 text-slate-700">
+            {readString(rerunRecommendation.rationale) ??
+              "No rerun rationale available."}
+          </p>
+          <TagList
+            label="Triggered by"
+            values={readStringArray(rerunRecommendation.triggeredBy)}
+            tone="slate"
+          />
+        </div>
+      ) : null}
       <MetricRow
         label="Revision summary"
         value={
@@ -428,6 +636,10 @@ function readObject(value: unknown): Record<string, unknown> | null {
 
 function readString(value: unknown): string | null {
   return typeof value === "string" ? value : null;
+}
+
+function readArray(value: unknown): unknown[] {
+  return Array.isArray(value) ? value : [];
 }
 
 function readNumber(value: unknown): number | null {

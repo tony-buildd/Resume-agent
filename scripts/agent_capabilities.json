@@ -1,0 +1,49 @@
+{
+  "sources": [
+    {
+      "repo": "https://github.com/huggingface/skills.git",
+      "ref": "main",
+      "source_path": "skills/hf-cli",
+      "destination": "hf-cli"
+    },
+    {
+      "repo": "https://github.com/huggingface/skills.git",
+      "ref": "main",
+      "source_path": "skills/huggingface-papers",
+      "destination": "huggingface-papers"
+    },
+    {
+      "repo": "https://github.com/huggingface/skills.git",
+      "ref": "main",
+      "source_path": "skills/huggingface-jobs",
+      "destination": "huggingface-jobs"
+    },
+    {
+      "repo": "https://github.com/huggingface/skills.git",
+      "ref": "main",
+      "source_path": "skills/transformers-js",
+      "destination": "transformers-js"
+    },
+    {
+      "repo": "https://github.com/affaan-m/everything-claude-code.git",
+      "ref": "main",
+      "source_path": ".agents/skills/verification-loop",
+      "destination": "ecc-verification-loop",
+      "rename_skill": "ecc-verification-loop"
+    },
+    {
+      "repo": "https://github.com/affaan-m/everything-claude-code.git",
+      "ref": "main",
+      "source_path": ".agents/skills/deep-research",
+      "destination": "ecc-deep-research",
+      "rename_skill": "ecc-deep-research"
+    },
+    {
+      "repo": "https://github.com/affaan-m/everything-claude-code.git",
+      "ref": "main",
+      "source_path": ".agents/skills/api-design",
+      "destination": "ecc-api-design",
+      "rename_skill": "ecc-api-design"
+    }
+  ]
+}

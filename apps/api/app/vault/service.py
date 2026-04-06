@@ -22,6 +22,7 @@ from app.vault.contracts import (
     VaultProjectStoryRecord,
     VaultRoleRecord,
 )
+from app.vault.safety import hydrate_role_safety
 
 
 def create_vault_role_tree(
@@ -69,6 +70,11 @@ def create_vault_role_tree(
             impact_summary=story_input.impact_summary,
             source_type=story_input.source_type,
             review_state=story_input.review_state,
+            memory_tier=story_input.memory_tier,
+            validation_status=story_input.validation_status,
+            contamination_risk=story_input.contamination_risk,
+            quarantine_reason=story_input.quarantine_reason,
+            feasibility_checks=story_input.feasibility_checks,
             draft_eligible=story_input.draft_eligible,
             details=story_input.details,
         )
@@ -87,6 +93,7 @@ def create_vault_role_tree(
             )
 
     db.add(company)
+    hydrate_role_safety(role, company_name=company.name)
     db.flush()
     return role
 
@@ -115,6 +122,7 @@ def base_vault_role_query() -> Select[VaultRole]:
 
 
 def serialize_vault_role(record: VaultRole) -> VaultRoleRecord:
+    hydrate_role_safety(record, company_name=record.company.name)
     role_level_facts = [item for item in record.facts if item.project_story_id is None]
     role_level_bullets = [
         item for item in record.bullet_candidates if item.project_story_id is None
@@ -158,6 +166,11 @@ def serialize_story(record: VaultProjectStory) -> VaultProjectStoryRecord:
         impactSummary=record.impact_summary,
         sourceType=record.source_type,
         reviewState=record.review_state,
+        memoryTier=record.memory_tier,
+        validationStatus=record.validation_status,
+        contaminationRisk=record.contamination_risk,
+        quarantineReason=record.quarantine_reason,
+        feasibilityChecks=record.feasibility_checks,
         draftEligible=record.draft_eligible,
         details=record.details,
         facts=[serialize_fact(item) for item in record.facts],
@@ -175,6 +188,11 @@ def serialize_fact(record: VaultFact) -> VaultFactRecord:
         evidence=record.evidence,
         sourceType=record.source_type,
         reviewState=record.review_state,
+        memoryTier=record.memory_tier,
+        validationStatus=record.validation_status,
+        contaminationRisk=record.contamination_risk,
+        quarantineReason=record.quarantine_reason,
+        feasibilityChecks=record.feasibility_checks,
         draftEligible=record.draft_eligible,
         details=record.details,
         createdAt=record.created_at,
@@ -189,6 +207,11 @@ def serialize_bullet(record: VaultBulletCandidate) -> VaultBulletCandidateRecord
         storyAngle=record.story_angle,
         sourceType=record.source_type,
         reviewState=record.review_state,
+        memoryTier=record.memory_tier,
+        validationStatus=record.validation_status,
+        contaminationRisk=record.contamination_risk,
+        quarantineReason=record.quarantine_reason,
+        feasibilityChecks=record.feasibility_checks,
         draftEligible=record.draft_eligible,
         supportingFactIds=[fact.id for fact in record.supporting_facts],
         details=record.details,
@@ -211,6 +234,11 @@ def build_fact(
         evidence=payload.evidence,
         source_type=payload.source_type,
         review_state=payload.review_state,
+        memory_tier=payload.memory_tier,
+        validation_status=payload.validation_status,
+        contamination_risk=payload.contamination_risk,
+        quarantine_reason=payload.quarantine_reason,
+        feasibility_checks=payload.feasibility_checks,
         draft_eligible=payload.draft_eligible,
         details=payload.details,
     )
@@ -230,6 +258,11 @@ def build_bullet(
         story_angle=payload.story_angle,
         source_type=payload.source_type,
         review_state=payload.review_state,
+        memory_tier=payload.memory_tier,
+        validation_status=payload.validation_status,
+        contamination_risk=payload.contamination_risk,
+        quarantine_reason=payload.quarantine_reason,
+        feasibility_checks=payload.feasibility_checks,
         draft_eligible=payload.draft_eligible,
         details=payload.details,
     )

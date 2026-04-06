@@ -1,0 +1,10 @@
+{
+  "paperTitle": "Agent Routing for Tool-Bounded Systems",
+  "abstract": "This paper describes how agent systems should select among internal data, APIs, structured sources, and browser fallbacks while preserving inspectability and bounded tool use.",
+  "keyFindings": [
+    "Route internal data first, then structured APIs, and use browser automation only as fallback.",
+    "Keep route decisions inspectable through explicit traces and confidence markers.",
+    "Separate stated paper claims from inferred implementation choices."
+  ],
+  "implementationGoal": "implementation planning only"
+}

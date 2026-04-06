@@ -45,14 +45,16 @@ The canonical GSD layer:
 3. [.planning/ROADMAP.md](/Users/minhthiennguyen/Desktop/agentic-resume-optimizer/.planning/ROADMAP.md)
 4. [.planning/STATE.md](/Users/minhthiennguyen/Desktop/agentic-resume-optimizer/.planning/STATE.md)
 5. [docs/architecture/foundation-contracts.md](/Users/minhthiennguyen/Desktop/agentic-resume-optimizer/docs/architecture/foundation-contracts.md)
+6. [docs/developer/agent-capabilities.md](/Users/minhthiennguyen/Desktop/agentic-resume-optimizer/docs/developer/agent-capabilities.md)
 
 ## How To Start Working
 
 1. Follow [local-setup.md](/Users/minhthiennguyen/Desktop/agentic-resume-optimizer/docs/developer/local-setup.md)
 2. Confirm env values using [environment.md](/Users/minhthiennguyen/Desktop/agentic-resume-optimizer/docs/developer/environment.md)
-3. Check `.planning/STATE.md` for the current active phase
-4. Read the relevant phase context and plan files
-5. Work in small commits and push each step
+3. Review [agent-capabilities.md](/Users/minhthiennguyen/Desktop/agentic-resume-optimizer/docs/developer/agent-capabilities.md) if your work touches external skills or sidecar agents
+4. Check `.planning/STATE.md` for the current active phase
+5. Read the relevant phase context and plan files
+6. Work in small commits and push each step
 
 ## Current Product Shape
 
@@ -61,9 +63,10 @@ Completed:
 - career vault
 - resume session flow
 - frontend workspace
-
-Current remaining milestone:
 - ship / polish
+
+Current active milestone:
+- agent capability integration
 
 ## Working Expectations
 

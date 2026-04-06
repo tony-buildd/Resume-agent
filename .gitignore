@@ -14,5 +14,10 @@ __pycache__/
 .env.*
 !.env.example
 *.tsbuildinfo
-.agents/
+.agents/*
+!.agents/skills/
+!.agents/skills/**
+!.agents/plugins/
+!.agents/plugins/**
 .claude/
+.cache/

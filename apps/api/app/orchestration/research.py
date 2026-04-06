@@ -3,15 +3,23 @@ from __future__ import annotations
 import json
 import re
 from collections import Counter
+from dataclasses import dataclass
 from typing import Any
 
 from pydantic import ValidationError
 
 from app.llm.openai_client import OpenAIResponsesClient
+from app.orchestration.capabilities import plan_capability_route
 from app.orchestration.contracts import (
+    CapabilityRouteRecord,
     JDAnalysisRecord,
+    ResearchPlanRecord,
     ResearchSourceRecord,
+    ResearchSubquestionRecord,
     ResearchSummaryRecord,
+    SourceBundleItemRecord,
+    SourceBundleRecord,
+    StrategySynthesisRecord,
 )
 
 STOPWORDS = {
@@ -102,19 +110,60 @@ LEVEL_KEYWORDS: list[tuple[str, set[str]]] = [
 ]
 
 
+@dataclass(slots=True)
+class ResearchExecutionBundle:
+    analysis: JDAnalysisRecord
+    research_summary: ResearchSummaryRecord
+    research_plan: ResearchPlanRecord
+    source_bundle: SourceBundleRecord
+    strategy_synthesis: StrategySynthesisRecord
+    capability_route: CapabilityRouteRecord
+
+
 def generate_jd_analysis_bundle(
     job_description: str,
     *,
+    route: CapabilityRouteRecord | None = None,
     client: OpenAIResponsesClient | None = None,
-) -> tuple[JDAnalysisRecord, ResearchSummaryRecord]:
+) -> ResearchExecutionBundle:
     llm_client = client or OpenAIResponsesClient()
+    capability_route = route or plan_capability_route(
+        job_description=job_description,
+        client=llm_client,
+    )
     analysis = analyze_job_description(job_description, client=llm_client)
+    research_plan = build_research_plan(
+        job_description,
+        analysis=analysis,
+        route=capability_route,
+    )
     research = summarize_role_research(
         job_description,
         analysis=analysis,
-        client=llm_client,
+        client=(
+            llm_client
+            if capability_route.summary.selected_capability == "openai_web_research"
+            else None
+        ),
     )
-    return analysis, research
+    source_bundle = build_source_bundle(
+        research,
+        route=capability_route,
+        research_plan=research_plan,
+    )
+    strategy_synthesis = build_strategy_synthesis(
+        research,
+        route=capability_route,
+        source_bundle=source_bundle,
+    )
+    return ResearchExecutionBundle(
+        analysis=analysis,
+        research_summary=research,
+        research_plan=research_plan,
+        source_bundle=source_bundle,
+        strategy_synthesis=strategy_synthesis,
+        capability_route=capability_route,
+    )
 
 
 def analyze_job_description(
@@ -184,6 +233,97 @@ def summarize_role_research(
             pass
 
     return heuristic_research_summary(job_description, analysis=analysis)
+
+
+def build_research_plan(
+    job_description: str,
+    *,
+    analysis: JDAnalysisRecord,
+    route: CapabilityRouteRecord,
+) -> ResearchPlanRecord:
+    company_name = extract_company_name(job_description) or "the target company"
+    focus = analysis.primary_focus
+    selected_capability = route.summary.selected_capability or "internal_jd_analysis"
+    return ResearchPlanRecord(
+        objective=(
+            f"Translate the JD for {company_name} into a role-fit strategy grounded in {focus} evidence."
+        ),
+        selectedCapability=selected_capability,
+        subquestions=[
+            ResearchSubquestionRecord(
+                question="What is the engineering archetype implied by the job description?",
+                reason="This decides which experiences and bullet shapes should lead the resume.",
+                preferredSourceType="internal",
+            ),
+            ResearchSubquestionRecord(
+                question="What business outcome should the tailored resume foreground first?",
+                reason="The narrative needs the hiring outcome, not just the stack keywords.",
+                preferredSourceType="internal",
+            ),
+            ResearchSubquestionRecord(
+                question="What external company or market signal should shift the resume strategy?",
+                reason="External context should only be used when it improves targeting or clarifies company priorities.",
+                preferredSourceType=route.summary.source_type or "internal",
+            ),
+        ],
+        notes=[
+            "Internal JD analysis is always performed before any external source is consulted.",
+            f"Primary external route: {selected_capability}.",
+        ],
+    )
+
+
+def build_source_bundle(
+    research: ResearchSummaryRecord,
+    *,
+    route: CapabilityRouteRecord,
+    research_plan: ResearchPlanRecord,
+) -> SourceBundleRecord:
+    items = [
+        SourceBundleItemRecord(
+            title=source.title,
+            url=source.url,
+            sourceType=route.summary.source_type or ("internal" if source.url is None else "external"),
+            note=source.note,
+            citation=source.url or source.title,
+        )
+        for source in research.sources
+    ]
+    if not items:
+        items.append(
+            SourceBundleItemRecord(
+                title="Provided job description",
+                url=None,
+                sourceType="internal",
+                note="Primary user-supplied source.",
+                citation="Provided job description",
+            )
+        )
+    return SourceBundleRecord(
+        items=items,
+        sourceCount=len(items),
+        notes=[
+            f"Research plan objective: {research_plan.objective}",
+            "Source bundle preserves citations used by the final strategy synthesis.",
+        ],
+    )
+
+
+def build_strategy_synthesis(
+    research: ResearchSummaryRecord,
+    *,
+    route: CapabilityRouteRecord,
+    source_bundle: SourceBundleRecord,
+) -> StrategySynthesisRecord:
+    return StrategySynthesisRecord(
+        companyName=research.company_name,
+        roleTitle=research.role_title,
+        strategicSummary=research.strategic_summary,
+        marketSignals=research.market_signals,
+        sourceNotes=research.source_notes,
+        citations=[item.citation for item in source_bundle.items],
+        confidence=route.summary.confidence or "medium",
+    )
 
 
 def heuristic_jd_analysis(job_description: str) -> JDAnalysisRecord:

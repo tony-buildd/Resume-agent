@@ -38,6 +38,15 @@ class InterruptReason(str, Enum):
     NONE = "none"
 
 
+class InterruptionType(str, Enum):
+    ADD_REQUIREMENT = "add_requirement"
+    REVISE_REQUIREMENT = "revise_requirement"
+    RETRACT_REQUIREMENT = "retract_requirement"
+    CLARIFY_FACT = "clarify_fact"
+    RISK_FLAG = "risk_flag"
+    REQUEST_REVISION = "request_revision"
+
+
 class RuntimeStage(BaseModel):
     key: StageKey
     label: str
@@ -78,6 +87,27 @@ class SessionEnvelope(BaseModel):
     status: str
     stage: RuntimeStage
     stage_history: list[StageKey] = Field(alias="stageHistory")
+    interruption_type: InterruptionType | None = Field(
+        default=None,
+        alias="interruptionType",
+    )
+    replan_from_stage: StageKey | None = Field(default=None, alias="replanFromStage")
+    memory_risk_summary: "MemoryRiskSummaryRecord | None" = Field(
+        default=None,
+        alias="memoryRiskSummary",
+    )
+    context_budget_summary: "ContextBudgetSummaryRecord | None" = Field(
+        default=None,
+        alias="contextBudgetSummary",
+    )
+    capability_route_summary: "CapabilityRouteSummaryRecord | None" = Field(
+        default=None,
+        alias="capabilityRouteSummary",
+    )
+    trajectory_evaluation_summary: "TrajectoryEvaluationSummaryRecord | None" = Field(
+        default=None,
+        alias="trajectoryEvaluationSummary",
+    )
     artifact_count: int = Field(alias="artifactCount")
     trace_event_count: int = Field(alias="traceEventCount")
     artifacts: list[RuntimeArtifact]
@@ -120,6 +150,53 @@ class ResearchSummaryRecord(BaseModel):
     market_signals: list[str] = Field(alias="marketSignals")
     source_notes: list[str] = Field(alias="sourceNotes")
     sources: list[ResearchSourceRecord]
+
+
+class ResearchSubquestionRecord(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    question: str
+    reason: str
+    preferred_source_type: str = Field(alias="preferredSourceType")
+
+
+class ResearchPlanRecord(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    objective: str
+    selected_capability: str = Field(alias="selectedCapability")
+    subquestions: list[ResearchSubquestionRecord]
+    notes: list[str] = Field(default_factory=list)
+
+
+class SourceBundleItemRecord(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    title: str
+    url: str | None = None
+    source_type: str = Field(alias="sourceType")
+    note: str | None = None
+    citation: str
+
+
+class SourceBundleRecord(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    items: list[SourceBundleItemRecord]
+    source_count: int = Field(alias="sourceCount")
+    notes: list[str] = Field(default_factory=list)
+
+
+class StrategySynthesisRecord(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    company_name: str | None = Field(default=None, alias="companyName")
+    role_title: str | None = Field(default=None, alias="roleTitle")
+    strategic_summary: str = Field(alias="strategicSummary")
+    market_signals: list[str] = Field(alias="marketSignals")
+    source_notes: list[str] = Field(alias="sourceNotes")
+    citations: list[str]
+    confidence: str
 
 
 class InterrogationPromptRecord(BaseModel):
@@ -202,17 +279,179 @@ class ResumePackageRecord(BaseModel):
     )
 
 
+class MemoryRiskSummaryRecord(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    quarantined_items: int = Field(default=0, alias="quarantinedItems")
+    high_risk_items: int = Field(default=0, alias="highRiskItems")
+    failed_feasibility_items: int = Field(default=0, alias="failedFeasibilityItems")
+    notes: list[str] = Field(default_factory=list)
+
+
+class ContextBudgetSummaryRecord(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    token_budget: int = Field(default=0, alias="tokenBudget")
+    reserved_budget: int = Field(default=0, alias="reservedBudget")
+    compressed: bool = False
+    notes: list[str] = Field(default_factory=list)
+
+
+class CapabilityRouteSummaryRecord(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    selected_capability: str | None = Field(default=None, alias="selectedCapability")
+    source_type: str | None = Field(default=None, alias="sourceType")
+    fallback_used: bool = Field(default=False, alias="fallbackUsed")
+    confidence: str | None = None
+    notes: list[str] = Field(default_factory=list)
+
+
+class CapabilityDescriptorRecord(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    key: str
+    label: str
+    scope: list[str]
+    latency: str
+    trust_level: str = Field(alias="trustLevel")
+    auth_required: bool = Field(alias="authRequired")
+    structured_output: bool = Field(alias="structuredOutput")
+    source_type: str = Field(alias="sourceType")
+    preferred_use_cases: list[str] = Field(alias="preferredUseCases")
+
+
+class CapabilityRouteCandidateRecord(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    capability_key: str = Field(alias="capabilityKey")
+    selected: bool
+    reason: str
+    fallback: bool = False
+
+
+class CapabilityRouteTraceStepRecord(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    capability_key: str = Field(alias="capabilityKey")
+    source_type: str = Field(alias="sourceType")
+    decision: str
+    reason: str
+
+
+class CapabilityRouteRecord(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    summary: CapabilityRouteSummaryRecord
+    selected_capability: CapabilityDescriptorRecord = Field(alias="selectedCapability")
+    candidates: list[CapabilityRouteCandidateRecord]
+    route_trace: list[CapabilityRouteTraceStepRecord] = Field(alias="routeTrace")
+    registry: list[CapabilityDescriptorRecord]
+
+
+class PaperDesignInputRecord(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    paper_title: str = Field(alias="paperTitle")
+    abstract: str
+    key_findings: list[str] = Field(alias="keyFindings")
+    implementation_goal: str = Field(alias="implementationGoal")
+
+
+class PaperDesignBriefRecord(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    paper_title: str = Field(alias="paperTitle")
+    implementation_goal: str = Field(alias="implementationGoal")
+    planning_summary: str = Field(alias="planningSummary")
+    stated_claims: list[str] = Field(alias="statedClaims")
+    inferred_design_decisions: list[str] = Field(alias="inferredDesignDecisions")
+    analysis_questions: list[str] = Field(alias="analysisQuestions")
+    coding_phases: list[str] = Field(alias="codingPhases")
+    evaluation_checks: list[str] = Field(alias="evaluationChecks")
+
+
+class TrajectoryEvaluationSummaryRecord(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    question_quality: str | None = Field(default=None, alias="questionQuality")
+    action_efficiency: str | None = Field(default=None, alias="actionEfficiency")
+    revision_efficiency: str | None = Field(default=None, alias="revisionEfficiency")
+    notes: list[str] = Field(default_factory=list)
+
+
+class EvaluationDimensionKey(str, Enum):
+    JD_FIT = "jd_fit"
+    EVIDENCE_SUPPORT = "evidence_support"
+    SPECIFICITY = "specificity"
+    OVERSTATEMENT_RISK = "overstatement_risk"
+    QUESTION_QUALITY = "question_quality"
+    EVIDENCE_COVERAGE = "evidence_coverage"
+    ACTION_EFFICIENCY = "action_efficiency"
+    REVISION_EFFICIENCY = "revision_efficiency"
+
+
+class EvaluationRubricDimensionRecord(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    key: EvaluationDimensionKey
+    label: str
+    weight: float
+    emphasis: str
+
+
+class EvaluationRubricRecord(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    profile: str
+    focus: str
+    weighting_rationale: str = Field(alias="weightingRationale")
+    dimensions: list[EvaluationRubricDimensionRecord]
+
+
 class EvaluationDimensionRecord(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
+    key: EvaluationDimensionKey | None = None
+    label: str | None = None
+    weight: float | None = None
     score: int = Field(ge=1, le=5)
     rationale: str
     evidence: list[str]
 
 
+class EvaluationTrajectoryJudgmentRecord(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    key: EvaluationDimensionKey
+    label: str
+    score: int = Field(ge=1, le=5)
+    rationale: str
+    evidence: list[str]
+
+
+class EvaluationRerunRecommendationRecord(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    target_stage: StageKey = Field(alias="targetStage")
+    rationale: str
+    triggered_by: list[str] = Field(alias="triggeredBy")
+    confidence: str
+
+
 class EvaluationScorecardRecord(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
+    rubric: EvaluationRubricRecord | None = None
+    dimensions: list[EvaluationDimensionRecord] = Field(default_factory=list)
+    trajectory_judgments: list[EvaluationTrajectoryJudgmentRecord] = Field(
+        default_factory=list,
+        alias="trajectoryJudgments",
+    )
+    rerun_recommendation: EvaluationRerunRecommendationRecord | None = Field(
+        default=None,
+        alias="rerunRecommendation",
+    )
     fit: EvaluationDimensionRecord
     evidence_support: EvaluationDimensionRecord = Field(alias="evidenceSupport")
     specificity: EvaluationDimensionRecord
@@ -230,6 +469,11 @@ class AdvanceSessionRequest(BaseModel):
     approve_checkpoint: bool = Field(default=False, alias="approveCheckpoint")
     accept_draft_review: bool = Field(default=False, alias="acceptDraftReview")
     request_revision: bool = Field(default=False, alias="requestRevision")
+    interruption_type: InterruptionType | None = Field(
+        default=None,
+        alias="interruptionType",
+    )
+    interruption_note: str | None = Field(default=None, alias="interruptionNote")
 
 
 class AdvanceSessionResponse(BaseModel):

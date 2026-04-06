@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
+from dataclasses import dataclass
 
 from sqlalchemy.orm import Session
 
@@ -16,14 +17,29 @@ from app.orchestration.contracts import (
 from app.vault.contracts import (
     VaultBulletCandidateRecord,
     VaultProjectStoryRecord,
+    VaultRetrievalTraceRecord,
     VaultRetrievalResponse,
     VaultRoleRecord,
 )
 from app.vault.retrieval import build_role_haystack, retrieve_vault_context
 
-MAX_ROLES = 2
-MAX_BULLETS_PER_ROLE = 3
-MAX_PROJECTS = 1
+
+@dataclass(frozen=True)
+class BlueprintBudgetPolicy:
+    max_roles: int = 2
+    max_stories_per_role: int = 1
+    max_bullets_per_story: int = 3
+    token_budget_per_stage: int = 240
+
+
+@dataclass(frozen=True)
+class BlueprintBuildResult:
+    blueprint: NarrativeBlueprintRecord
+    selection_traces: list[VaultRetrievalTraceRecord]
+    budget_policy: BlueprintBudgetPolicy
+
+
+DEFAULT_BLUEPRINT_POLICY = BlueprintBudgetPolicy()
 
 
 def build_narrative_blueprint(
@@ -33,34 +49,42 @@ def build_narrative_blueprint(
     analysis: JDAnalysisRecord,
     research: ResearchSummaryRecord,
     canonical_context: dict[str, object],
-) -> NarrativeBlueprintRecord:
+) -> BlueprintBuildResult:
+    policy = DEFAULT_BLUEPRINT_POLICY
     keyword_priorities = collect_keyword_priorities(analysis)
     retrieval = retrieve_vault_context(
         db,
         user=user,
         query=build_blueprint_query(analysis, research, canonical_context),
-        limit=MAX_ROLES + 1,
+        limit=policy.max_roles + 1,
+        story_limit=policy.max_stories_per_role,
+        evidence_limit=policy.max_bullets_per_story,
         include_semantic=False,
     )
-    selected_roles = select_roles(retrieval, keyword_priorities)
+    selected_roles = select_roles(retrieval, keyword_priorities, policy=policy)
     matched_terms = collect_matched_terms(selected_roles, keyword_priorities)
 
-    return NarrativeBlueprintRecord(
+    blueprint = NarrativeBlueprintRecord(
         narrativeAngle=build_narrative_angle(analysis, research, selected_roles),
         headlineFocus=build_headline_focus(analysis, research),
         keywordPriorities=keyword_priorities,
         skillsFocus=select_skills_focus(keyword_priorities, selected_roles),
         selectedRoles=selected_roles,
-        sections=build_sections(selected_roles),
+        sections=build_sections(selected_roles, policy=policy),
         omittedSignals=[
             requirement
             for requirement in analysis.top_requirements
             if not requirement_matches(requirement, matched_terms)
         ],
         onePageStrategy=(
-            "Lead with the strongest JD-aligned bullets, keep experience to two roles max, "
-            "and cut any story that does not add direct evidence for the target role."
+            "Lead with the strongest JD-aligned bullets, honor the explicit role/story evidence budgets, "
+            "and omit any story that does not add direct evidence for the target role."
         ),
+    )
+    return BlueprintBuildResult(
+        blueprint=blueprint,
+        selection_traces=retrieval.selection_traces,
+        budget_policy=policy,
     )
 
 
@@ -85,11 +109,13 @@ def build_blueprint_query(
 def select_roles(
     retrieval: VaultRetrievalResponse,
     keyword_priorities: list[str],
+    *,
+    policy: BlueprintBudgetPolicy,
 ) -> list[BlueprintRoleRecord]:
     selected_roles: list[BlueprintRoleRecord] = []
 
-    for role in retrieval.draft_safe_roles[:MAX_ROLES]:
-        bullets = select_role_bullets(role, keyword_priorities)
+    for role in retrieval.draft_safe_roles[: policy.max_roles]:
+        bullets = select_role_bullets(role, keyword_priorities, policy=policy)
         if not bullets:
             continue
 
@@ -110,6 +136,8 @@ def select_roles(
 def select_role_bullets(
     role: VaultRoleRecord,
     keyword_priorities: list[str],
+    *,
+    policy: BlueprintBudgetPolicy,
 ) -> list[BlueprintBulletRecord]:
     ranked_candidates: list[tuple[int, BlueprintBulletRecord]] = []
 
@@ -125,11 +153,7 @@ def select_role_bullets(
             )
         )
 
-    story_count = 0
     for story in rank_stories(role.project_stories, keyword_priorities):
-        if story_count >= MAX_PROJECTS:
-            break
-        story_count += 1
         for bullet in story.bullet_candidates:
             ranked_candidates.append(
                 (
@@ -155,7 +179,9 @@ def select_role_bullets(
             continue
         unique.append(bullet)
         seen_texts.add(key)
-        if len(unique) >= MAX_BULLETS_PER_ROLE:
+        if len(unique) >= policy.max_bullets_per_story * max(
+            1, policy.max_stories_per_role
+        ):
             break
 
     return unique
@@ -214,6 +240,8 @@ def build_headline_focus(
 
 def build_sections(
     selected_roles: list[BlueprintRoleRecord],
+    *,
+    policy: BlueprintBudgetPolicy,
 ) -> list[BlueprintSectionRecord]:
     return [
         BlueprintSectionRecord(key="header", label="Header", included=True, maxItems=1),
@@ -222,13 +250,13 @@ def build_sections(
             key="experience",
             label="Experience",
             included=bool(selected_roles),
-            maxItems=MAX_ROLES,
+            maxItems=policy.max_roles,
         ),
         BlueprintSectionRecord(
             key="projects",
             label="Projects",
             included=any(role.selected_story_names for role in selected_roles),
-            maxItems=MAX_PROJECTS,
+            maxItems=policy.max_stories_per_role,
         ),
     ]
 

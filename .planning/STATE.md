@@ -5,22 +5,21 @@
 See: .planning/PROJECT.md (updated 2026-04-05)
 
 **Core value:** Turn fragmented career context into a credible, strategically tailored one-page resume that matches a target role without hiding how the system reached its recommendations.
-**Current focus:** Milestone complete
+**Current focus:** Hardening and evolution milestone complete
 
 ## Current Position
 
-Phase: 5 of 5 (Ship / Polish)
+Phase: 11 of 11 (Progressive UX and Control Surfaces)
 Plan: complete
 Status: Complete
-Last activity: 2026-04-05 — Completed Phase 5 and closed the current milestone
-
+Last activity: 2026-04-05 — Completed Phase 11 progressive UX and closed the Phase 7-11 milestone
 Progress: [██████████] 100%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 15
+- Total plans completed: 26
 - Average duration: 57 min
 - Total execution time: 12.2 hours
 
@@ -63,18 +62,31 @@ Recent decisions affecting current work:
 - Plan 04-03: Add summary-first trace inspection and accessibility polish so the workspace is ready for verification and shipping
 - Plan 05-01: Document local setup, environment expectations, and day-one contributor onboarding
 - Plan 05-02: Document deployment, release, and the GSD operating model for future maintainers
+- Milestone 2: Preserve the working prototype while hardening runtime safety, retrieval scaling, evaluation depth, research routing, and UX controls
+- Milestone 2: Use Paper2Code-derived architecture ideas only as planning input, not direct code generation
+- Milestone 2: Keep Browser Use as a routed fallback behind internal/API/structured sources
+- Phase 7: Separate trust review state from safety state and expose replan metadata in the session envelope
+- Phase 7: Keep risky evidence available for questioning while blocking it from draft-safe retrieval
+
+### Roadmap Evolution
+
+- Phase 7 added: Runtime Hardening and Memory Safety
+- Phase 8 added: Hierarchical Retrieval and Context Budgeting
+- Phase 9 added: Adaptive Evaluation and Review Loop
+- Phase 10 added: Capability Routing and Research Orchestration
+- Phase 11 added: Progressive UX and Control Surfaces
 
 ### Pending Todos
 
-- Consider a next milestone for CI/CD automation and a concrete production deployment target once hosting is locked.
+- Start a new milestone when ready for productionization, deployment hardening, or broader workflow expansion.
 
 ### Blockers/Concerns
 
-- External research docs in `.planning/research/` are bootstrap baselines and should be validated during later implementation
-- No active blockers; current roadmap is complete
+- Existing APIs and UI surfaces already assume the prototype contract shape, so model/contract changes must remain backward-tolerant during the refactor
+- Capability source repos have overlapping skill names; continue selective adaptation instead of full mirroring
 
 ## Session Continuity
 
-Last session: 2026-04-05 14:09
-Stopped at: Current milestone complete; next step would be a new milestone or shipping workflow
+Last session: 2026-04-06 03:44
+Stopped at: Phase 7-11 roadmap complete
 Resume file: None

@@ -1,0 +1,90 @@
+{
+  "fixtureName": "backend-platform-session",
+  "analysis": {
+    "topRequirements": [
+      "Python backend systems",
+      "distributed systems",
+      "Postgres"
+    ],
+    "primaryFocus": "backend",
+    "repeatingTerms": [
+      "backend",
+      "platform"
+    ],
+    "expectedLevel": "senior",
+    "engineeringArchetype": "platform builder",
+    "businessImpact": "reliability",
+    "successDefinition": [
+      "Ship backend systems"
+    ]
+  },
+  "blueprint": {
+    "narrativeAngle": "Tell a backend systems story",
+    "headlineFocus": "platform depth",
+    "keywordPriorities": [
+      "Python",
+      "Postgres"
+    ],
+    "skillsFocus": [
+      "Python",
+      "Postgres"
+    ],
+    "selectedRoles": [
+      {
+        "roleId": "r1",
+        "companyName": "Tesla",
+        "roleTitle": "Software Engineer",
+        "whySelected": "Direct backend match",
+        "selectedBullets": [
+          {
+            "bulletId": "b1",
+            "text": "Built Python services that processed 5M events/day and reduced invoice latency by 32% using Postgres and queue-based workers.",
+            "sourceStoryId": "s1",
+            "sourceStoryName": "Invoice platform",
+            "rationale": "Strong systems evidence"
+          }
+        ],
+        "selectedStoryNames": [
+          "Invoice platform"
+        ]
+      }
+    ],
+    "sections": [
+      {
+        "key": "experience",
+        "label": "Experience",
+        "included": true,
+        "maxItems": 4
+      }
+    ],
+    "omittedSignals": [
+      "Distributed systems depth"
+    ],
+    "onePageStrategy": "Lead with strongest backend evidence"
+  },
+  "package": {
+    "markdownResume": "Built Python services with Postgres backing invoice workflows and reduced latency by 32% while improving reliability.",
+    "talkingPoints": [],
+    "concernHandlingNotes": []
+  },
+  "runtime": {
+    "stage_history": [
+      "jd_intake",
+      "jd_analysis_review",
+      "career_intake",
+      "blueprint_review",
+      "draft_review"
+    ],
+    "transitions": [
+      "jd_intake_to_jd_analysis_review",
+      "jd_analysis_review_to_career_intake"
+    ],
+    "canonical_session_context": {
+      "gap_python_backend": {
+        "targetRequirement": "Python backend systems",
+        "whyItMatters": "Need concrete backend evidence",
+        "answer": "I built Python invoice services using Postgres and background workers that processed 5 million records per day and reduced latency by 32 percent."
+      }
+    }
+  }
+}
