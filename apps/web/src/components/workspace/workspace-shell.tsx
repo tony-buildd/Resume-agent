@@ -46,7 +46,7 @@ export function WorkspaceShell({
     <section className="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(340px,0.95fr)]">
       <article className="overflow-hidden rounded-[34px] border border-slate-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(244,247,255,0.96))] p-6 shadow-[0_28px_90px_-48px_rgba(15,23,42,0.55)] sm:p-7">
         <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="max-w-2xl">
+          <div className="max-w-2xl" aria-live="polite">
             <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-500">
               Guided workspace
             </p>
@@ -129,10 +129,14 @@ export function WorkspaceShell({
             <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">
               Session map
             </p>
-            <div className="mt-4 flex flex-wrap gap-2">
+            <ol
+              className="mt-4 flex list-none flex-wrap gap-2 p-0"
+              aria-label="Session stage history"
+            >
               {session.stageHistory.map((stageKey, index) => (
-                <span
+                <li
                   key={`${stageKey}-${index}`}
+                  aria-current={stageKey === session.stage.key ? "step" : undefined}
                   className={`rounded-full px-3 py-2 text-[11px] font-medium uppercase tracking-[0.18em] ${
                     stageKey === session.stage.key
                       ? "bg-slate-950 text-white"
@@ -140,9 +144,9 @@ export function WorkspaceShell({
                   }`}
                 >
                   {stageKey}
-                </span>
+                </li>
               ))}
-            </div>
+            </ol>
 
             <dl className="mt-5 grid grid-cols-3 gap-3">
               <MetricCard
@@ -222,7 +226,7 @@ export function WorkspaceShell({
               {session.artifactCount}
             </span>
           </div>
-          <div className="mt-4 space-y-3">
+          <div className="mt-4 space-y-3" aria-label="Artifact history">
             {session.artifacts
               .slice()
               .reverse()

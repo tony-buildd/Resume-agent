@@ -39,12 +39,13 @@ export function ReviewActions({
             <input type="hidden" name="reviewAction" value={action.value} />
             <button
               type="submit"
+              aria-label={action.label}
               className={`rounded-full px-4 py-2 text-sm font-medium transition ${
                 action.tone === "primary"
-                  ? "bg-slate-950 text-white hover:bg-slate-800"
+                  ? "bg-slate-950 text-white hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2"
                   : action.tone === "accent"
-                    ? "bg-amber-100 text-amber-950 hover:bg-amber-200"
-                    : "border border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50"
+                    ? "bg-amber-100 text-amber-950 hover:bg-amber-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 focus-visible:ring-offset-2"
+                    : "border border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 focus-visible:ring-offset-2"
               }`}
             >
               {action.label}
