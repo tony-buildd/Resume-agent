@@ -15,6 +15,7 @@ from app.db.models import (
 )
 from pydantic import BaseModel
 
+from app.orchestration.capabilities import plan_capability_route
 from app.orchestration.blueprint import build_narrative_blueprint
 from app.orchestration.context_budget import apply_context_budget
 from app.orchestration.contracts import (
@@ -807,6 +808,10 @@ def advance_session(
                 break
 
             runtime["answers"]["jobDescription"] = latest_answer
+            capability_route = plan_capability_route(job_description=latest_answer)
+            runtime["capability_route_summary"] = serialize_model_payload(
+                capability_route.summary
+            )
             analysis, research = generate_jd_analysis_bundle(latest_answer)
             runtime["job_constraint_profile"] = serialize_model_payload(analysis)
             runtime["research_summary"] = serialize_model_payload(research)
@@ -837,13 +842,24 @@ def advance_session(
                     "research": runtime["research_summary"],
                 },
             )
+            upsert_stage_artifact(
+                db,
+                record,
+                stage=StageKey.JD_ANALYSIS_REVIEW,
+                kind="capability-route",
+                status=ArtifactStatus.CANDIDATE,
+                title="Capability routing decision",
+                summary="The runtime selected a research route and recorded which capabilities were considered, selected, or deferred.",
+                payload=serialize_model_payload(capability_route),
+            )
             runtime["jd_analysis_artifact_id"] = jd_analysis.id
             runtime["research_summary_artifact_id"] = research_summary.id
             append_trace(
                 db,
                 record,
                 stage=stage,
-                message="Captured job description input and prepared JD analysis and research artifacts.",
+                message="Captured job description input and prepared JD analysis, research, and capability-route artifacts.",
+                payload=runtime["capability_route_summary"],
             )
             latest_answer = None
             transition_to(

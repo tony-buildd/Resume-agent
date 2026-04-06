@@ -260,6 +260,38 @@ class CapabilityRouteSummaryRecord(BaseModel):
     notes: list[str] = Field(default_factory=list)
 
 
+class CapabilityDescriptorRecord(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    key: str
+    label: str
+    scope: list[str]
+    latency: str
+    trust_level: str = Field(alias="trustLevel")
+    auth_required: bool = Field(alias="authRequired")
+    structured_output: bool = Field(alias="structuredOutput")
+    source_type: str = Field(alias="sourceType")
+    preferred_use_cases: list[str] = Field(alias="preferredUseCases")
+
+
+class CapabilityRouteCandidateRecord(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    capability_key: str = Field(alias="capabilityKey")
+    selected: bool
+    reason: str
+    fallback: bool = False
+
+
+class CapabilityRouteRecord(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    summary: CapabilityRouteSummaryRecord
+    selected_capability: CapabilityDescriptorRecord = Field(alias="selectedCapability")
+    candidates: list[CapabilityRouteCandidateRecord]
+    registry: list[CapabilityDescriptorRecord]
+
+
 class TrajectoryEvaluationSummaryRecord(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
