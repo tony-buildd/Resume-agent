@@ -5,15 +5,15 @@
 See: .planning/PROJECT.md (updated 2026-04-05)
 
 **Core value:** Turn fragmented career context into a credible, strategically tailored one-page resume that matches a target role without hiding how the system reached its recommendations.
-**Current focus:** Adaptive evaluation milestone execution
+**Current focus:** Capability routing milestone execution
 
 ## Current Position
 
-Phase: 9 of 11 (Adaptive Evaluation and Review Loop)
-Plan: 09-01
+Phase: 10 of 11 (Capability Routing and Research Orchestration)
+Plan: 10-01
 Status: In Progress
-Last activity: 2026-04-05 — Completed Phase 8 hierarchical retrieval and queued Phase 9 rubric work
-Progress: [███████░░░] 73%
+Last activity: 2026-04-05 — Completed Phase 9 adaptive evaluation and queued Phase 10 capability routing
+Progress: [████████░░] 82%
 
 ## Performance Metrics
 
@@ -78,8 +78,8 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-- Start Phase 9 by replacing the fixed evaluator with role-aware rubric generation.
-- Carry forward the paper-review findings as acceptance checks for Phases 9-10.
+- Start Phase 10 by adding a capability registry and route summary surface.
+- Carry forward the paper-review findings as acceptance checks for Phase 10.
 
 ### Blockers/Concerns
 
@@ -88,6 +88,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-04-06 01:28
-Stopped at: Phase 8 complete; next step is Phase 9 adaptive evaluation and review loop
+Last session: 2026-04-06 02:09
+Stopped at: Phase 9 complete; next step is Phase 10 capability routing and research orchestration
 Resume file: None

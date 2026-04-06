@@ -19,7 +19,7 @@ This roadmap builds Resume Agent from project skeleton to a hardened, inspectabl
 - [x] **Phase 6: Agent Capability Integration** - Add Codex-native wrappers, bootstrap scripts, and docs for external skill ecosystems and agent tooling.
 - [x] **Phase 7: Runtime Hardening and Memory Safety** - Split trust from safety, add interruption intents, delta replanning, and quarantine/feasibility enforcement.
 - [x] **Phase 8: Hierarchical Retrieval and Context Budgeting** - Replace flat retrieval with role/story/evidence selection and budget-aware context assembly.
-- [ ] **Phase 9: Adaptive Evaluation and Review Loop** - Replace the shallow evaluator with role-aware rubrics, trajectory judgments, and replayable QA fixtures.
+- [x] **Phase 9: Adaptive Evaluation and Review Loop** - Replace the shallow evaluator with role-aware rubrics, trajectory judgments, and replayable QA fixtures.
 - [ ] **Phase 10: Capability Routing and Research Orchestration** - Add a capability registry, API-first routing policy, and multi-pass research artifacts with citations.
 - [ ] **Phase 11: Progressive UX and Control Surfaces** - Expose interruption, evidence, risk, and route controls progressively without overwhelming the workspace.
 
@@ -183,9 +183,9 @@ Plans:
 
 Plans:
 
-- [ ] 09-01: Implement rubric generation, dimension weighting, and the new scorecard types.
-- [ ] 09-02: Implement trajectory-aware evaluation, rerun recommendations, and evaluator evidence persistence.
-- [ ] 09-03: Add offline replay fixtures and QA-oriented evaluation commands.
+- [x] 09-01: Implement rubric generation, dimension weighting, and the new scorecard types.
+- [x] 09-02: Implement trajectory-aware evaluation, rerun recommendations, and evaluator evidence persistence.
+- [x] 09-03: Add offline replay fixtures and QA-oriented evaluation commands.
 
 ### Phase 10: Capability Routing and Research Orchestration
 
