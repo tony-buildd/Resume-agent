@@ -21,7 +21,7 @@ This roadmap builds Resume Agent from project skeleton to a hardened, inspectabl
 - [x] **Phase 8: Hierarchical Retrieval and Context Budgeting** - Replace flat retrieval with role/story/evidence selection and budget-aware context assembly.
 - [x] **Phase 9: Adaptive Evaluation and Review Loop** - Replace the shallow evaluator with role-aware rubrics, trajectory judgments, and replayable QA fixtures.
 - [x] **Phase 10: Capability Routing and Research Orchestration** - Add a capability registry, API-first routing policy, and multi-pass research artifacts with citations.
-- [ ] **Phase 11: Progressive UX and Control Surfaces** - Expose interruption, evidence, risk, and route controls progressively without overwhelming the workspace.
+- [x] **Phase 11: Progressive UX and Control Surfaces** - Expose interruption, evidence, risk, and route controls progressively without overwhelming the workspace.
 
 ## Phase Details
 
@@ -219,9 +219,9 @@ Plans:
 
 Plans:
 
-- [ ] 11-01: Implement progressive workspace states and sidecar/full-surface transitions.
-- [ ] 11-02: Add interruption controls, narrative scope controls, and evidence risk panels.
-- [ ] 11-03: Add evaluator drilldowns and capability-route visibility throughout the workspace.
+- [x] 11-01: Implement progressive workspace states and sidecar/full-surface transitions.
+- [x] 11-02: Add interruption controls, narrative scope controls, and evidence risk panels.
+- [x] 11-03: Add evaluator drilldowns and capability-route visibility throughout the workspace.
 
 ## Progress
 
@@ -237,7 +237,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 5. Ship / Polish       | 2/2            | Complete    | 2026-04-05 |
 | 6. Agent Capability Integration | 3/3     | Complete    | 2026-04-05 |
 | 7. Runtime Hardening and Memory Safety | 3/3 | Complete | 2026-04-05 |
-| 8. Hierarchical Retrieval and Context Budgeting | 0/3 | Not Started | — |
-| 9. Adaptive Evaluation and Review Loop | 0/3 | Not Started | — |
-| 10. Capability Routing and Research Orchestration | 0/3 | Not Started | — |
-| 11. Progressive UX and Control Surfaces | 0/3 | Not Started | — |
+| 8. Hierarchical Retrieval and Context Budgeting | 3/3 | Complete | 2026-04-05 |
+| 9. Adaptive Evaluation and Review Loop | 3/3 | Complete | 2026-04-05 |
+| 10. Capability Routing and Research Orchestration | 3/3 | Complete | 2026-04-05 |
+| 11. Progressive UX and Control Surfaces | 3/3 | Complete | 2026-04-05 |
