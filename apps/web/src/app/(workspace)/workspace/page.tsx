@@ -34,10 +34,21 @@ export default async function WorkspacePage({
   searchParams,
 }: WorkspacePageProps) {
   const { mode, sessionId, artifactId } = await searchParams;
-  const workspaceState = await loadWorkspaceState(
-    sessionId,
-    parseWorkspaceMode(mode),
-  );
+  const workspaceMode = parseWorkspaceMode(mode);
+
+  if (!sessionId) {
+    const created =
+      workspaceMode === "vault"
+        ? await createVaultInterviewSession()
+        : await createSession();
+    const params = new URLSearchParams({ sessionId: created.id });
+    if (workspaceMode === "vault") {
+      params.set("mode", "vault");
+    }
+    redirect(`/workspace?${params.toString()}`);
+  }
+
+  const workspaceState = await loadWorkspaceState(sessionId, workspaceMode);
 
   if (workspaceState.kind === "error") {
     return (
@@ -59,13 +70,17 @@ export default async function WorkspacePage({
     );
   }
 
-  const { session, vaultRoles, workspaceMode } = workspaceState;
+  const {
+    session,
+    vaultRoles,
+    workspaceMode: resolvedWorkspaceMode,
+  } = workspaceState;
 
   return (
     <WorkspaceShell
       session={session}
       vaultRoles={vaultRoles}
-      workspaceMode={workspaceMode}
+      workspaceMode={resolvedWorkspaceMode}
       vaultPrompt={readVaultPrompt(session.artifacts)}
       vaultCheckpoint={readVaultCheckpoint(session.artifacts)}
       preferredArtifactId={artifactId ?? null}
@@ -78,22 +93,10 @@ function parseWorkspaceMode(mode: string | undefined): WorkspaceMode {
 }
 
 async function loadWorkspaceState(
-  sessionId: string | undefined,
+  sessionId: string,
   workspaceMode: WorkspaceMode,
 ): Promise<WorkspaceState> {
   try {
-    if (!sessionId) {
-      const created =
-        workspaceMode === "vault"
-          ? await createVaultInterviewSession()
-          : await createSession();
-      const params = new URLSearchParams({ sessionId: created.id });
-      if (workspaceMode === "vault") {
-        params.set("mode", "vault");
-      }
-      redirect(`/workspace?${params.toString()}`);
-    }
-
     const [session, vaultRoles] = await Promise.all([
       getSession(sessionId),
       listVaultRoles(),
