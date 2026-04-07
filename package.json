@@ -7,8 +7,8 @@
     "build:web": "pnpm --dir apps/web build",
     "lint:web": "pnpm --dir apps/web lint",
     "typecheck:web": "pnpm --dir apps/web exec tsc --noEmit",
-    "dev:api": "python3 -m uvicorn app.main:app --app-dir apps/api --reload",
-    "check:api": "python3 -c \"from app.main import app; print(app.title)\""
+    "dev:api": "python3 -m uvicorn app.main:app --app-dir apps/api --reload --reload-dir apps/api",
+    "check:api": ".venv/bin/python3 -c \"import sys; sys.path.insert(0, 'apps/api'); from app.main import app; print(app.title)\""
   },
   "devDependencies": {
     "flag": "5.0.1",
