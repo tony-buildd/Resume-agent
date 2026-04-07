@@ -14,10 +14,7 @@ __pycache__/
 .env.*
 !.env.example
 *.tsbuildinfo
-.agents/*
-!.agents/skills/
-!.agents/skills/**
-!.agents/plugins/
-!.agents/plugins/**
+.agents/
 .claude/
 .cache/
+skills-lock.json
