@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
+import { UserButton } from "@clerk/nextjs";
 
 import { getAuthState } from "@/lib/auth";
 
@@ -29,16 +29,18 @@ export default async function Home() {
             <div className="flex items-center gap-3">
               {!isAuthenticated ? (
                 <div className="flex flex-wrap gap-3">
-                  <SignInButton mode="modal">
-                    <button className="rounded-full bg-slate-950 px-4 py-3 text-sm font-medium text-slate-50">
-                      Sign in
-                    </button>
-                  </SignInButton>
-                  <SignUpButton mode="modal">
-                    <button className="rounded-full border border-slate-300 bg-white px-4 py-3 text-sm font-medium text-slate-900">
-                      Create account
-                    </button>
-                  </SignUpButton>
+                  <Link
+                    href="/sign-in"
+                    className="rounded-full bg-slate-950 px-4 py-3 text-sm font-medium text-slate-50"
+                  >
+                    Sign in
+                  </Link>
+                  <Link
+                    href="/sign-up"
+                    className="rounded-full border border-slate-300 bg-white px-4 py-3 text-sm font-medium text-slate-900"
+                  >
+                    Create account
+                  </Link>
                 </div>
               ) : (
                 <>
